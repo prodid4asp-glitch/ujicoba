@@ -1,4 +1,3 @@
-<!-- Database Supabase melalui Apps Script. Secret key hanya di Script Properties. -->
 <!doctype html>
 <html lang="id">
 <head>
@@ -44,9 +43,9 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
  * CSV_URL sudah diisi dengan sumber CSV publik yang diberikan.
  */
 window.PORTAL_CONFIG=Object.freeze({
-  API_URL:'https://script.google.com/macros/s/AKfycbxYx6tjBysPAPTH36UrBsKRnq4ZELNDG34qnOsaIiTghcB4ag7IgdVEz5ydvCEOs-IeJw/exec',
+  API_URL:'https://script.google.com/macros/s/AKfycbyd-D-NBS3_a24TG3Mx5cdORXayTW_RRtoCN9prAXLXffDFK1fl4ARfuceMDjUuqiyhgA/exec',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.30.0'
+  VERSION:'6.31.0'
 });
 
 (function(){
@@ -158,7 +157,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.30.0</div>
+      <div class="hint" style="margin-top:16px">Versi 6.31.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -207,7 +206,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
       setText('academicYear','Tahun akademik '+((boot.config&&boot.config.ACADEMIC_YEAR)||'2026/2027'));
-      setText('version','v'+((boot.app&&boot.app.version)||'6.30.0'));
+      setText('version','v'+((boot.app&&boot.app.version)||'6.31.0'));
       setText('userName',user.name||user.username||'Pengguna');
       var roles={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
@@ -501,7 +500,7 @@ if(window.__pendingPortalLoginV52){
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
 function isPageAllowed(p){return p==='dashboard'||(p!=='reviews'&&!!S.boot?.nav?.some(x=>x.id===p))}
-function renderShell(){const b=S.boot,u=b.user;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='v'+(b.app?.version||'6.30.0');$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Minimize sidebar'}markNav()}
+function renderShell(){const b=S.boot,u=b.user;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='v'+(b.app?.version||'6.31.0');$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Minimize sidebar'}markNav()}
 function markNav(){document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));$('pageTitle').textContent=LABEL[S.page]||'Portal'}
 async function login(e){
   // v4.7: satu-satunya jalur login adalah bootstrap kecil di atas.
@@ -661,9 +660,9 @@ function internshipDetail(id,readOnly=false){const a=(S.cache.internship?.applic
  if(a.signed_file_url)detail+=`<div class="alert success">Surat TTE tersedia: <a target="_blank" rel="noopener" href="${attr(a.signed_file_url)}">Buka ${esc(a.signed_file_name||'surat')}</a></div>`;
  openModal('Detail Pengajuan Magang',`${internshipAppType(a)} · diajukan ${dt(a.submitted_at)}`,detail,`<span></span><div class="actions"><button class="btn ghost" data-action="intern-doc" data-id="${attr(a.application_id)}">Unduh Draft Surat</button><button class="btn primary" data-action="close-modal">Tutup</button></div>`)}
 function internshipOfficeTable(rows,mode){return table(rows,[['student_name','Mahasiswa',(v,r)=>`<b>${esc(v||'-')}</b><br><span class="muted">${esc(r.student_id||'')}</span>`],['type','Jenis',(v,r)=>`${esc(internshipAppType(r))}${r.type==='non-kemenkeu'?`<br><span class="muted">Prioritas ${esc(r.priority_no||'-')}</span>`:''}`],['office_name','Tujuan',(v,r)=>r.type==='kemenkeu'?esc((r.preferences||[]).map(x=>x.office_name).filter(Boolean).join(' · ')||'-'):esc(v||'-')],['submitted_at','Diajukan',(v)=>dt(v)],['status','Status',(v)=>internshipStatus(v)]],r=>`<button class="btn secondary small" data-action="intern-office-detail" data-id="${attr(r.application_id)}" data-mode="${attr(mode)}">Lihat Detail</button>`)}
-function renderInternshipOffice(b){const mode=b.mode,rows=b.applications||[],s=b.summary||{};let h=`<section class="hero"><h3>${mode==='admin'?'Administrasi':'Monitoring'} Magang</h3><p>${mode==='admin'?'Kelola seluruh pengajuan, status proses, anggota, dan unggah Surat TTE.':'Rekap pengajuan magang untuk kebutuhan monitoring tanpa hak perubahan data.'}</p></section>${cards([{label:'Total Pengajuan',value:s.total||0},{label:'Kemenkeu',value:s.kemenkeu||0},{label:'Non-Kemenkeu',value:s.nonKemenkeu||0},{label:'Surat Siap',value:s.byStatus?.['Surat Siap']||0}])}<section class="section"><div class="sectionhead"><div><h3>Daftar Pengajuan</h3><p>Status diperbarui langsung dari database Google Sheets.</p><span id="internshipLiveStatus" class="live-sync">Data Sinkron</span></div><button class="btn ghost" data-action="intern-export">Export Rekap Spreadsheet</button></div>${internshipOfficeTable(rows,mode)}</section>`;$('content').innerHTML=h}
-function realtimeDelayV627(base,failures=0){const step=Math.min(4,Math.max(0,Number(failures)||0)),delay=Math.min(60000,(Number(base)||5000)*Math.pow(2,step));return delay+Math.floor(Math.random()*700)}
-const INTERNSHIP_REALTIME_INTERVAL_V622=60000;
+function renderInternshipOffice(b){const mode=b.mode,rows=b.applications||[],s=b.summary||{};let h=`<section class="hero"><h3>${mode==='admin'?'Administrasi':'Monitoring'} Magang</h3><p>${mode==='admin'?'Kelola seluruh pengajuan, status proses, anggota, dan unggah Surat TTE.':'Rekap pengajuan magang untuk kebutuhan monitoring tanpa hak perubahan data.'}</p></section>${cards([{label:'Total Pengajuan',value:s.total||0},{label:'Kemenkeu',value:s.kemenkeu||0},{label:'Non-Kemenkeu',value:s.nonKemenkeu||0},{label:'Surat Siap',value:s.byStatus?.['Surat Siap']||0}])}<section class="section"><div class="sectionhead"><div><h3>Daftar Pengajuan</h3><p>Status diperbarui langsung dari database Supabase.</p><span id="internshipLiveStatus" class="live-sync">Data Sinkron</span></div><button class="btn ghost" data-action="intern-export">Export Rekap Spreadsheet</button></div>${internshipOfficeTable(rows,mode)}</section>`;$('content').innerHTML=h}
+function realtimeDelayV627(base,failures=0){const step=Math.min(4,Math.max(0,Number(failures)||0)),delay=Math.min(90000,(Number(base)||12000)*Math.pow(2,step));return delay+Math.floor(Math.random()*1200)}
+const INTERNSHIP_REALTIME_INTERVAL_V622=12000;
 function applyInternshipBundleV622(bundle,revision){
  if(!bundle)return;
  const next=Object.assign({},bundle,{internship_revision:revision||bundle.internship_revision||''});
@@ -888,7 +887,7 @@ function renderSupervisor(b){
  const historyHtml=`<details class="monitor-block"${['student','lecturer'].includes(role)?' open':''}><summary><span>Riwayat & Pengajuan Pembimbing</span></summary><div class="monitor-body"><p class="hint">Diurutkan dari waktu pengajuan paling awal agar urutan antrean mahasiswa terlihat jelas.</p>${liveStatus}<div class="monitor-table-scroll">${table(req,[['queue_no','No.'],['submitted_at','Waktu Pengajuan',dt],['student_name','Mahasiswa'],['field_name','Bidang'],['course_name','Mata Kuliah'],['title','Rencana Judul'],['lecturer_name','Dosen'],['status','Status',statusBadge]],supervisorRequestActionV621(role))}</div></div></details>`;h=role==='student'?historyHtml+h:h+historyHtml;$('content').innerHTML=h;startSupervisorRealtimeV621();
 }
 
-const SUPERVISOR_REALTIME_INTERVAL_V621=60000;
+const SUPERVISOR_REALTIME_INTERVAL_V621=12000;
 function supervisorComposerBusyV621(){
  if($('modalBack')?.classList?.contains('show'))return true;
  const role=S.boot?.user?.role_id||'';
@@ -1026,7 +1025,7 @@ function openGuidanceFeedback(id){const r=(S.cache.guidance||[]).find(x=>String(
 async function saveGuidanceFeedback(id,studentId){const feedback=val('gfText');if(!feedback)return toast('Masukan dosen wajib diisi.',true);busy(true);try{await api('saveGuidance',{guidance_id:id,student_id:studentId,lecturer_feedback:feedback});closeModal();toast('Masukan dosen tersimpan.');await loadPage('guidance',true)}catch(e){toast(e.message,true)}finally{busy(false)}}
 
 const DOCUMENT_LABEL={PROPOSAL:'Proposal Skripsi',GUIDANCE_PROOF:'Bukti Bimbingan',EXAM_THESIS:'Skripsi untuk Ujian Skripsi',FINAL_THESIS:'Skripsi Akhir',OTHER:'Lampiran'};
-const DOCUMENT_REALTIME_INTERVAL_V620=60000;
+const DOCUMENT_REALTIME_INTERVAL_V620=12000;
 function periodDateTimeV624(value){
  const text=String(value||'').trim(),match=text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?$/);if(!match)return text;
  const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -1308,7 +1307,7 @@ window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if(
 if(!window.__portalLoginBootstrapReadyV52){forceLoginVisible('Mesin Fast Login v4.7 belum terpasang lengkap.');} safeStartV52();
 
 function mockRpc(req){
- const boot={app:{name:'Skripsi & Magang',version:'6.30.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
+ const boot={app:{name:'Skripsi & Magang',version:'6.31.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
  if(req.action==='auth.login'){if(req.identifier!=='admin'||req.password!=='admin123')return{ok:false,message:'Username atau password salah.'};return{ok:true,token:'demo',boot}}
  if(req.action==='auth.resume')return req.token?{ok:true,token:req.token,boot}:{ok:false,message:'Sesi habis'};
  if(req.action==='auth.requestReset')return{ok:true,destination:'a***@example.ac.id'};if(req.action==='auth.resetPassword')return{ok:true,message:'Password berhasil direset.'};if(req.action==='auth.logout')return{ok:true};
