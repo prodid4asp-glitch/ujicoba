@@ -44,10 +44,10 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
  * Supabase menangani autentikasi dan notifikasi perubahan secara langsung.
  */
 window.PORTAL_CONFIG=Object.freeze({
-  API_URL:'https://script.google.com/macros/s/AKfycbyD8h2LSiSqiEund52ojcu7wRPfr4JrVdxaEQmkJdKwXMIq9bd2sMQWccDHwgTjAMJJvw/exec',
+  API_URL:'https://script.google.com/macros/s/AKfycbzoURhpXA7VNn_tFGHNKCILy_dsWf40FhW2tM2GIXQj8gNoZ4qUjof3CuWI0vOUQYGBjQ/exec',
   SUPABASE_URL:'https://jpyhkqysvfgywdjdrdev.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
-  VERSION:'7.0.0'
+  SUPABASE_PUBLISHABLE_KEY:'PASTE_SUPABASE_PUBLISHABLE_KEY_HERE',
+  VERSION:'7.1.0'
 });
 
 (function(){
@@ -107,7 +107,7 @@ window.PORTAL_CONFIG=Object.freeze({
       <h2>Masuk</h2><p>Gunakan akun portal sesuai role Anda.</p>
       <div id="authNotice" class="notice"></div>
       <form id="loginForm">
-        <div class="field"><label>Email</label><input id="loginIdentifier" type="email" autocomplete="username" required></div>
+        <div class="field"><label>Username atau email</label><input id="loginIdentifier" autocomplete="username" required></div>
         <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
         <button id="loginBtn" class="btn primary full" type="button">Masuk</button>
       </form>
@@ -122,7 +122,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 7.0.0</div>
+      <div class="hint" style="margin-top:16px">Versi 7.1.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -171,7 +171,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
       setText('academicYear','Tahun akademik '+((boot.config&&boot.config.ACADEMIC_YEAR)||'2026/2027'));
-      setText('version','v'+((boot.app&&boot.app.version)||'7.0.0'));
+      setText('version','v'+((boot.app&&boot.app.version)||'7.1.0'));
       setText('userName',user.name||user.username||'Pengguna');
       var roles={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
@@ -225,20 +225,19 @@ window.PORTAL_CONFIG=Object.freeze({
     if(!identifier||!password){showNotice('Username dan password wajib diisi.','error');return false;}
     setBusy(true);
     if(!window.supabase||!window.PortalBridge||typeof window.PortalBridge.request!=='function'){
-      fail(new Error('Supabase belum siap. Periksa publishable key pada konfigurasi frontend.'));
+      fail(new Error('Komponen autentikasi belum siap. Muat ulang halaman.'));
       return false;
     }
-    if(identifier.indexOf('@')<0){fail(new Error('Supabase Auth menggunakan alamat email, bukan username.'));return false;}
-    var cfg=window.PORTAL_CONFIG;
-    var sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
-    sb.auth.signInWithPassword({email:identifier,password:password})
-      .then(function(authResult){
-        if(authResult.error)throw authResult.error;
-        var token=authResult.data&&authResult.data.session&&authResult.data.session.access_token;
-        if(!token)throw new Error('Token Supabase tidak diterima.');
-        return window.PortalBridge.request({action:'auth.resume',token:token},20000);
-      })
-      .then(function(raw){deliver(parse(raw));})
+    window.PortalBridge.request({action:'auth.compatLogin',identifier:identifier,password:password},25000)
+      .then(function(raw){
+        var result=parse(raw);if(!result.ok)return result;
+        var key=result.publishableKey||window.PORTAL_CONFIG.SUPABASE_PUBLISHABLE_KEY;
+        if(!key||String(key).startsWith('PASTE_'))throw new Error('SUPABASE_PUBLISHABLE_KEY belum diisi pada Script Properties atau frontend.');
+        window.__portalSupabaseKey=key;try{localStorage.setItem('portal_supabase_publishable_key',key)}catch(_){ }
+        var cfg=window.PORTAL_CONFIG;
+        var sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
+        return sb.auth.setSession({access_token:result.token,refresh_token:result.refreshToken}).then(function(s){if(s.error)throw s.error;return result;});
+      }).then(deliver)
       .catch(fail);
     return false;
   }
@@ -471,7 +470,7 @@ if(window.__pendingPortalLoginV52){
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
 function isPageAllowed(p){return p==='dashboard'||(p!=='reviews'&&!!S.boot?.nav?.some(x=>x.id===p))}
-function renderShell(){const b=S.boot,u=b.user;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='v'+(b.app?.version||'7.0.0');$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Minimize sidebar'}markNav()}
+function renderShell(){const b=S.boot,u=b.user;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='v'+(b.app?.version||'7.1.0');$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Minimize sidebar'}markNav()}
 function markNav(){document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));$('pageTitle').textContent=LABEL[S.page]||'Portal'}
 async function login(e){
   // v4.7: satu-satunya jalur login adalah bootstrap kecil di atas.
@@ -493,8 +492,9 @@ async function resume(){
     if(!hadCache&&S.page==='admin'&&S.workspace.adminTabs?.[S.adminTab]){const cachedAdmin=S.workspace.adminTabs[S.adminTab];renderAdminShell();S.adminData=cachedAdmin.data;S.adminRefs=cachedAdmin.refs||{};renderAdminTab(S.adminTab,S.adminData);hadCache=true;}
     if(!hadCache)$('content').innerHTML=`<div class="card"><h3>${esc(LABEL[S.page]||S.page)}</h3><p class="hint">Menyiapkan data pertama kali…</p></div>`;
     finishStartupV62();
-    if(window.supabase&&window.PORTAL_CONFIG?.SUPABASE_PUBLISHABLE_KEY&&!String(window.PORTAL_CONFIG.SUPABASE_PUBLISHABLE_KEY).startsWith('PASTE_')){
-      const cfg=window.PORTAL_CONFIG,sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
+    const rememberedKey=window.__portalSupabaseKey||storeGet('portal_supabase_publishable_key')||window.PORTAL_CONFIG?.SUPABASE_PUBLISHABLE_KEY||'';
+    if(window.supabase&&rememberedKey&&!String(rememberedKey).startsWith('PASTE_')){
+      window.__portalSupabaseKey=rememberedKey;const cfg=window.PORTAL_CONFIG,sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,rememberedKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}));
       const current=await sb.auth.getSession();
       if(current.data?.session?.access_token)S.token=current.data.session.access_token;
     }
@@ -1191,8 +1191,9 @@ function stopPortalRealtimeV70(){
 function startPortalRealtimeV70(){
   stopPortalRealtimeV70();
   const cfg=window.PORTAL_CONFIG;
-  if(!S.token||!window.supabase||!cfg?.SUPABASE_URL||String(cfg.SUPABASE_PUBLISHABLE_KEY||'').startsWith('PASTE_'))return;
-  const sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true}}));
+  const key=window.__portalSupabaseKey||cfg?.SUPABASE_PUBLISHABLE_KEY||'';
+  if(!S.token||!window.supabase||!cfg?.SUPABASE_URL||String(key).startsWith('PASTE_'))return;
+  const sb=window.__portalSupabase||(window.__portalSupabase=window.supabase.createClient(cfg.SUPABASE_URL,key,{auth:{persistSession:true,autoRefreshToken:true}}));
   startPortalRealtimeV70._channel=sb.channel('portal-live-v7')
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'portal_revisions'},function(){
      clearTimeout(startPortalRealtimeV70._refreshTimer);
@@ -1226,7 +1227,7 @@ window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if(
 if(!window.__portalLoginBootstrapReadyV52){forceLoginVisible('Mesin Fast Login v4.7 belum terpasang lengkap.');} safeStartV52();
 
 function mockRpc(req){
- const boot={app:{name:'Skripsi & Magang',version:'7.0.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
+ const boot={app:{name:'Skripsi & Magang',version:'7.1.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
  if(req.action==='auth.login'){if(req.identifier!=='admin'||req.password!=='admin123')return{ok:false,message:'Username atau password salah.'};return{ok:true,token:'demo',boot}}
  if(req.action==='auth.resume')return req.token?{ok:true,token:req.token,boot}:{ok:false,message:'Sesi habis'};
  if(req.action==='auth.requestReset')return{ok:true,destination:'a***@example.ac.id'};if(req.action==='auth.resetPassword')return{ok:true,message:'Password berhasil direset.'};if(req.action==='auth.logout')return{ok:true};
