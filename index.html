@@ -46,7 +46,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.30.0'
+  VERSION:'6.31.0'
 });
 
 (function(){
@@ -69,7 +69,13 @@ window.PORTAL_CONFIG=Object.freeze({
     catch(_){try{if(result.token)sessionStorage.setItem(TOKEN_KEY,String(result.token));if(result.refreshToken)sessionStorage.setItem(REFRESH_KEY,String(result.refreshToken));if(result.sessionExpiresAt)sessionStorage.setItem(EXPIRES_KEY,String(result.sessionExpiresAt));}catch(__){}}
     window.dispatchEvent(new CustomEvent('portal:session',{detail:result}));
   }
-  async function post(payload,key,controller){var token=String(payload.token||'').trim();return fetch(apiUrl(),{method:'POST',headers:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+(token||key)},body:JSON.stringify(payload),signal:controller.signal,cache:'no-store'});}
+  async function post(payload,key,controller){
+    var token=String(payload.token||'').trim(),publicAuth=payload.action==='auth.login'||payload.action==='auth.refresh';
+    // Login/refresh dikirim sebagai simple CORS request. Ini menghindari kegagalan
+    // preflight pada GitHub Pages; autentikasi action lain tetap memakai JWT.
+    var headers=publicAuth?{'Content-Type':'text/plain;charset=UTF-8'}:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+(token||key)};
+    return fetch(apiUrl(),{method:'POST',headers:headers,body:JSON.stringify(payload),signal:controller.signal,cache:'no-store',mode:'cors'});
+  }
   function refreshSession(key,controller){
     if(refreshPromise)return refreshPromise;
     var refreshToken=readStore(REFRESH_KEY);
@@ -92,7 +98,11 @@ window.PORTAL_CONFIG=Object.freeze({
       if(!response.ok)throw new Error(result&&result.message||('Supabase HTTP '+response.status));
       if(result&&(result.token||result.refreshToken))writeSession(result);
       return result||{ok:false,message:'Respons backend kosong.'};
-    }catch(err){if(err&&err.name==='AbortError')throw new Error('Koneksi Supabase melewati batas waktu.');throw err;}finally{clearTimeout(timer);}
+    }catch(err){
+      if(err&&err.name==='AbortError')throw new Error('Koneksi Supabase melewati batas waktu.');
+      if(err instanceof TypeError&&/fetch/i.test(String(err.message||'')))throw new Error('Edge Function portal-api belum aktif atau diblokir CORS. Pastikan fungsi sudah di-deploy dengan verify_jwt=false.');
+      throw err;
+    }finally{clearTimeout(timer);}
   }
   function parseCsv(text){
     var rows=[],row=[],field='',quoted=false;
@@ -150,7 +160,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.30.0</div>
+      <div class="hint" style="margin-top:16px">Versi 6.31.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
