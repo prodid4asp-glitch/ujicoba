@@ -61,16 +61,36 @@ window.PORTAL_CONFIG=Object.freeze({
   }catch(_){ }
 
   function apiUrl(){return String(window.PORTAL_CONFIG.SUPABASE_URL||'').replace(/\/$/,'')+'/functions/v1/portal-api';}
+  var TOKEN_KEY='portal_v60_token',REFRESH_KEY='portal_v60_refresh',EXPIRES_KEY='portal_v60_expires',refreshPromise=null;
+  function readStore(key){try{return localStorage.getItem(key)||sessionStorage.getItem(key)||''}catch(_){return''}}
+  function writeSession(result){
+    if(!result)return;
+    try{if(result.token)localStorage.setItem(TOKEN_KEY,String(result.token));if(result.refreshToken)localStorage.setItem(REFRESH_KEY,String(result.refreshToken));if(result.sessionExpiresAt)localStorage.setItem(EXPIRES_KEY,String(result.sessionExpiresAt));}
+    catch(_){try{if(result.token)sessionStorage.setItem(TOKEN_KEY,String(result.token));if(result.refreshToken)sessionStorage.setItem(REFRESH_KEY,String(result.refreshToken));if(result.sessionExpiresAt)sessionStorage.setItem(EXPIRES_KEY,String(result.sessionExpiresAt));}catch(__){}}
+    window.dispatchEvent(new CustomEvent('portal:session',{detail:result}));
+  }
+  async function post(payload,key,controller){var token=String(payload.token||'').trim();return fetch(apiUrl(),{method:'POST',headers:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+(token||key)},body:JSON.stringify(payload),signal:controller.signal,cache:'no-store'});}
+  function refreshSession(key,controller){
+    if(refreshPromise)return refreshPromise;
+    var refreshToken=readStore(REFRESH_KEY);
+    if(!refreshToken)return Promise.resolve(null);
+    refreshPromise=(async function(){var response=await post({action:'auth.refresh',refreshToken:refreshToken,clientVersion:String(window.PORTAL_CONFIG.VERSION||'')},key,controller);var result=await response.json().catch(function(){return null;});if(!response.ok||!result||!result.ok)return null;writeSession(result);return result;})().finally(function(){refreshPromise=null;});
+    return refreshPromise;
+  }
   async function request(payload,timeout){
     var key=String(window.PORTAL_CONFIG.SUPABASE_ANON_KEY||'').trim();
     if(!key||key.indexOf('PASTE_')===0)throw new Error('SUPABASE_ANON_KEY belum diisi di index.html.');
     payload=Object.assign({},payload||{},{clientVersion:String(window.PORTAL_CONFIG.VERSION||'')});
     var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},Number(timeout)||30000);
     try{
-      var token=String(payload.token||'').trim();
-      var response=await fetch(apiUrl(),{method:'POST',headers:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+(token||key)},body:JSON.stringify(payload),signal:controller.signal,cache:'no-store'});
+      var response=await post(payload,key,controller);
       var result=await response.json().catch(function(){return null;});
+      if(response.status===401&&payload.action!=='auth.login'&&payload.action!=='auth.refresh'){
+        var refreshed=await refreshSession(key,controller);
+        if(refreshed&&refreshed.token){payload.token=refreshed.token;response=await post(payload,key,controller);result=await response.json().catch(function(){return null;});}
+      }
       if(!response.ok)throw new Error(result&&result.message||('Supabase HTTP '+response.status));
+      if(result&&(result.token||result.refreshToken))writeSession(result);
       return result||{ok:false,message:'Respons backend kosong.'};
     }catch(err){if(err&&err.name==='AbortError')throw new Error('Koneksi Supabase melewati batas waktu.');throw err;}finally{clearTimeout(timer);}
   }
@@ -173,8 +193,8 @@ window.PORTAL_CONFIG=Object.freeze({
       var nav=document.getElementById('nav');
       function setText(id,text){var el=document.getElementById(id);if(el)el.textContent=text||'';}
       var expiresAt=Number(result&&result.sessionExpiresAt)||Date.now()+24*60*60*1000;
-      try{localStorage.setItem('portal_v60_token',String(result.token||''));localStorage.setItem('portal_v60_boot',JSON.stringify(boot));localStorage.setItem('portal_v60_page','dashboard');localStorage.setItem('portal_v60_expires',String(expiresAt));}catch(_){
-        try{sessionStorage.setItem('portal_v60_token',String(result.token||''));sessionStorage.setItem('portal_v60_boot',JSON.stringify(boot));sessionStorage.setItem('portal_v60_page','dashboard');sessionStorage.setItem('portal_v60_expires',String(expiresAt));}catch(__){}
+      try{localStorage.setItem('portal_v60_token',String(result.token||''));localStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));localStorage.setItem('portal_v60_boot',JSON.stringify(boot));localStorage.setItem('portal_v60_page','dashboard');localStorage.setItem('portal_v60_expires',String(expiresAt));}catch(_){
+        try{sessionStorage.setItem('portal_v60_token',String(result.token||''));sessionStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));sessionStorage.setItem('portal_v60_boot',JSON.stringify(boot));sessionStorage.setItem('portal_v60_page','dashboard');sessionStorage.setItem('portal_v60_expires',String(expiresAt));}catch(__){}
       }
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
@@ -270,7 +290,7 @@ window.PORTAL_CONFIG=Object.freeze({
       return;
     }
     if(action==='logout'){
-      try{['portal_v60_token','portal_v60_boot','portal_v60_page','portal_v60_admin','portal_v60_collapsed','portal_v60_expires'].forEach(function(k){localStorage.removeItem(k);sessionStorage.removeItem(k);});}catch(_){}
+      try{['portal_v60_token','portal_v60_refresh','portal_v60_boot','portal_v60_page','portal_v60_admin','portal_v60_collapsed','portal_v60_expires'].forEach(function(k){localStorage.removeItem(k);sessionStorage.removeItem(k);});}catch(_){}
       try{location.reload();}catch(_){}
       return;
     }
@@ -325,7 +345,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const K={token:'portal_v60_token',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
+const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
 // window.name dapat dikelola host/sandbox dan berpotensi mengganggu lifecycle frame.
@@ -336,7 +356,7 @@ function jsonGet(k){try{return JSON.parse(storeGet(k)||'null')}catch(e){return n
 function sessionJsonGet(k){try{return JSON.parse((window.sessionStorage&&sessionStorage.getItem(k))||'null')}catch(e){return null}}
 function sessionJsonSet(k,obj){try{const raw=JSON.stringify(obj);if(raw.length>1600000)return false;sessionStorage.setItem(k,raw);return true}catch(e){return false}}
 function sessionRemove(k){try{sessionStorage.removeItem(k)}catch(e){}}
-const S={token:storeGet(K.token)||'',boot:jsonGet(K.boot),expiresAt:Number(storeGet(K.expires)||0),page:storeGet(K.page)||'dashboard',adminTab:storeGet(K.admin)||'config',collapsed:storeGet(K.collapsed)==='1',pageSeq:0,adminData:null,adminRefs:{},cache:{},workspace:{pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0},lastView:sessionJsonGet(K.lastView)};
+const S={token:storeGet(K.token)||'',refreshToken:storeGet(K.refresh)||'',boot:jsonGet(K.boot),expiresAt:Number(storeGet(K.expires)||0),page:storeGet(K.page)||'dashboard',adminTab:storeGet(K.admin)||'config',collapsed:storeGet(K.collapsed)==='1',pageSeq:0,adminData:null,adminRefs:{},cache:{},workspace:{pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0},lastView:sessionJsonGet(K.lastView)};
 if(S.token&&!S.expiresAt)S.expiresAt=Date.now()+SESSION_TTL_MS;
 const LABEL={dashboard:'Dashboard',supervisor:'Pembimbing Skripsi dan Magang',guidance:'Bimbingan',documents:'Dokumen Skripsi',proposal_seminar:'Seminar Proposal',thesis_exam:'Ujian Skripsi',letters:'Surat Riset',internship:'Pengajuan Magang',profile:'Profil Saya',admin:'Administrasi'};
 const ROLE={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
@@ -345,10 +365,10 @@ function durableOpenV61(){return new Promise((resolve,reject)=>{try{if(!window.i
 async function durableReadV61(){try{const db=await durableOpenV61();return await new Promise((resolve,reject)=>{const tx=db.transaction('session','readonly'),req=tx.objectStore('session').get('active');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)});}catch(e){return null}}
 async function durableWriteV61(payload){try{const db=await durableOpenV61();await new Promise((resolve,reject)=>{const tx=db.transaction('session','readwrite');tx.objectStore('session').put(payload,'active');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});return true}catch(e){return false}}
 async function durableDeleteV61(){try{const db=await durableOpenV61();await new Promise((resolve,reject)=>{const tx=db.transaction('session','readwrite');tx.objectStore('session').delete('active');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});}catch(e){}}
-function scheduleDurableSaveV61(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=setTimeout(()=>{if(!S.token)return;durableWriteV61({token:S.token,boot:S.boot,expiresAt:S.expiresAt,page:S.page,adminTab:S.adminTab,collapsed:S.collapsed,lastView:S.lastView,workspace:S.workspace,savedAt:Date.now()})},80)}
-async function restoreDurableSessionV61(){const rec=await durableReadV61();if(S.token&&S.boot?.user){if(rec?.workspace)S.workspace=rec.workspace;if(!S.lastView&&rec?.lastView)S.lastView=rec.lastView;return true}if(!rec||!rec.token||!rec.boot?.user||Number(rec.expiresAt||0)<=Date.now()){if(rec)durableDeleteV61();return false}S.token=String(rec.token);S.boot=rec.boot;S.expiresAt=Number(rec.expiresAt);S.page=rec.page||'dashboard';S.adminTab=rec.adminTab||'config';S.collapsed=!!rec.collapsed;S.lastView=rec.lastView||null;if(rec.workspace)S.workspace=rec.workspace;return true}
-function save(){storeSet(K.token,S.token||'');storeSet(K.boot,JSON.stringify(S.boot||null));storeSet(K.page,S.page||'dashboard');storeSet(K.admin,S.adminTab||'config');storeSet(K.collapsed,S.collapsed?'1':'0');storeSet(K.expires,S.expiresAt||'');scheduleDurableSaveV61()}
-function clearSession(){S.token='';S.boot=null;S.expiresAt=0;S.cache={};S.workspace={pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0};S.lastView=null;[K.token,K.boot,K.expires].forEach(storeRemove);sessionRemove(K.lastView);durableDeleteV61()}
+function scheduleDurableSaveV61(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=setTimeout(()=>{if(!S.token)return;durableWriteV61({token:S.token,refreshToken:S.refreshToken,boot:S.boot,expiresAt:S.expiresAt,page:S.page,adminTab:S.adminTab,collapsed:S.collapsed,lastView:S.lastView,workspace:S.workspace,savedAt:Date.now()})},80)}
+async function restoreDurableSessionV61(){const rec=await durableReadV61();if(S.token&&S.boot?.user){if(!S.refreshToken&&rec?.refreshToken)S.refreshToken=String(rec.refreshToken);if(rec?.workspace)S.workspace=rec.workspace;if(!S.lastView&&rec?.lastView)S.lastView=rec.lastView;return true}if(!rec||!rec.token||!rec.boot?.user){if(rec)durableDeleteV61();return false}S.token=String(rec.token);S.refreshToken=String(rec.refreshToken||'');S.boot=rec.boot;S.expiresAt=Number(rec.expiresAt);S.page=rec.page||'dashboard';S.adminTab=rec.adminTab||'config';S.collapsed=!!rec.collapsed;S.lastView=rec.lastView||null;if(rec.workspace)S.workspace=rec.workspace;return true}
+function save(){storeSet(K.token,S.token||'');storeSet(K.refresh,S.refreshToken||'');storeSet(K.boot,JSON.stringify(S.boot||null));storeSet(K.page,S.page||'dashboard');storeSet(K.admin,S.adminTab||'config');storeSet(K.collapsed,S.collapsed?'1':'0');storeSet(K.expires,S.expiresAt||'');scheduleDurableSaveV61()}
+function clearSession(){S.token='';S.refreshToken='';S.boot=null;S.expiresAt=0;S.cache={};S.workspace={pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0};S.lastView=null;[K.token,K.refresh,K.boot,K.expires].forEach(storeRemove);sessionRemove(K.lastView);durableDeleteV61()}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function attr(v){return esc(v)}function val(id){return ($(id)?.value||'').trim()}function truth(v){return v===true||['true','1','yes'].includes(String(v).toLowerCase())}
 function date(v){if(!v)return'-';let d=new Date(String(v).length===10?v+'T00:00:00':v);return isNaN(d)?esc(v):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
@@ -413,10 +433,10 @@ function sleepV52(ms){return new Promise(r=>setTimeout(r,ms))}
 async function fetchPageV52(page,fresh=false){
   S.fetchingPages=S.fetchingPages||{};
   if(S.fetchingPages[page])return S.fetchingPages[page];
-  const tokenAtStart=S.token;
+  const tokenAtStart=S.token,userAtStart=S.boot?.user?.email||'';
   S.fetchingPages[page]=(async()=>{
     const r=await rpc({action:'page.load',page,token:tokenAtStart,fresh:!!fresh},30000);
-    if(tokenAtStart!==S.token)throw new Error('Sesi berubah.');
+    if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');
     if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data halaman gagal dimuat.');}
     S.workspace.pages=S.workspace.pages||{};S.workspace.pageSynced=S.workspace.pageSynced||{};
     S.workspace.pages[page]=r.bundle||{};S.workspace.pageSynced[page]=Date.now();
@@ -442,7 +462,7 @@ async function refreshBootV52(){
   }catch(e){console.warn('Boot refresh:',e?.message||e)}
 }
 function enter(r,restore=false){
-  S.token=r?.token||S.token;S.boot=r?.boot||S.boot;
+  S.token=r?.token||S.token;S.refreshToken=r?.refreshToken||S.refreshToken;S.boot=r?.boot||S.boot;
   S.expiresAt=Number(r?.sessionExpiresAt)||S.expiresAt||Date.now()+SESSION_TTL_MS;
   if(!S.token)throw new Error('Token login tidak diterima dari backend.');
   if(!S.boot?.user)throw new Error('Data pengguna/menu tidak diterima dari backend.');
@@ -486,7 +506,7 @@ async function sendReset(){const id=val('resetIdentifier')||val('loginIdentifier
 async function resetPassword(){const id=val('resetIdentifier')||val('loginIdentifier'),code=val('resetCode'),p1=$('resetPassword').value,p2=$('resetPassword2').value;if(!id||!code||!p1)return notice('Username/email, kode, dan password baru wajib diisi.');if(p1!==p2)return notice('Konfirmasi password baru tidak sama.');try{const r=await rpc({action:'auth.resetPassword',identifier:id,code,newPassword:p1},18000);if(!r?.ok)throw new Error(r?.message||'Reset gagal.');$('forgotBox').open=false;$('loginIdentifier').value=id;$('loginPassword').value='';$('resetCode').value='';$('resetPassword').value='';$('resetPassword2').value='';notice(r.message||'Password berhasil direset. Silakan login.','success');$('loginPassword').focus()}catch(e){notice(e.message)}}
 async function resume(){
   if(!S.token||!S.boot?.user){$('app').classList.add('hidden');$('loginPage').classList.remove('hidden');finishStartupV62();return;}
-  if(S.expiresAt&&S.expiresAt<=Date.now())return showLogin('Sesi 24 jam telah berakhir. Silakan masuk kembali.');
+  if(S.expiresAt&&S.expiresAt<=Date.now()&&!S.refreshToken)return showLogin('Sesi login telah berakhir. Silakan masuk kembali.');
   try{
     if(!isPageAllowed(S.page))S.page='dashboard';
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');markNav();
@@ -497,7 +517,7 @@ async function resume(){
     finishStartupV62();
     const restored=await rpc({action:'auth.resume',token:S.token},30000);
     if(!restored?.ok){if(restored?.code==='SESSION_EXPIRED')return showLogin('Sesi 24 jam telah berakhir. Silakan masuk kembali.');throw new Error(restored?.message||'Sesi tidak dapat dipulihkan.');}
-    S.token=restored.token||S.token;S.boot=restored.boot||S.boot;S.expiresAt=Number(restored.sessionExpiresAt)||S.expiresAt||Date.now()+SESSION_TTL_MS;save();
+    S.token=restored.token||S.token;S.refreshToken=restored.refreshToken||S.refreshToken;S.boot=restored.boot||S.boot;S.expiresAt=Number(restored.sessionExpiresAt)||S.expiresAt||Date.now()+SESSION_TTL_MS;save();
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');markNav();
     // Halaman terakhir selalu dibaca ulang agar F5 menampilkan data Google Sheets terbaru.
     if(S.page==='admin')await loadAdminTab(S.adminTab,true);else await loadPage(S.page,true);
@@ -1143,8 +1163,8 @@ async function loadAdminTab(tab,force=false){
 }
 async function fetchAdminTabV52(tab,fresh=false){
  S.fetchingAdmin=S.fetchingAdmin||{};if(S.fetchingAdmin[tab])return S.fetchingAdmin[tab];
- const tokenAtStart=S.token;
- S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},16000);if(tokenAtStart!==S.token)throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;scheduleDurableSaveV61();return item})();
+ const tokenAtStart=S.token,userAtStart=S.boot?.user?.email||'';
+ S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},16000);if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;scheduleDurableSaveV61();return item})();
  try{return await S.fetchingAdmin[tab]}finally{delete S.fetchingAdmin[tab]}
 };
 
@@ -1275,6 +1295,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('beforeunload',()=>{stopDocumentsRealtimeV620();stopSupervisorRealtimeV621();stopInternshipRealtimeV622();if(S.token)save()});
 let supabaseRealtimeClientV630=null,supabaseRealtimeChannelV630=null,supabaseRealtimeTimerV630=null;
+window.addEventListener('portal:session',ev=>{const r=ev?.detail||{};if(r.token)S.token=String(r.token);if(r.refreshToken)S.refreshToken=String(r.refreshToken);if(r.sessionExpiresAt)S.expiresAt=Number(r.sessionExpiresAt);if(r.boot?.user)S.boot=r.boot;save();if(supabaseRealtimeClientV630&&r.token)supabaseRealtimeClientV630.realtime.setAuth(String(r.token));});
 function ensureSupabaseRealtimeV630(){
  if(!S.token||supabaseRealtimeChannelV630||!window.supabase)return;
  const c=window.PORTAL_CONFIG,key=String(c.SUPABASE_ANON_KEY||'');if(!key||key.startsWith('PASTE_'))return;
