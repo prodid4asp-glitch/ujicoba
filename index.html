@@ -51,7 +51,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.42.0'
+  VERSION:'6.43.0'
 });
 
 (function(){
@@ -165,7 +165,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.42.0</div>
+      <div class="hint" style="margin-top:16px">Versi 6.43.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -214,7 +214,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
       setText('academicYear','Tahun akademik '+((boot.config&&boot.config.ACADEMIC_YEAR)||'2026/2027'));
-      setText('version','v'+((boot.app&&boot.app.version)||'6.42.0'));
+      setText('version','v'+((boot.app&&boot.app.version)||'6.43.0'));
       setText('userName',user.name||user.username||'Pengguna');
       var roles={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
@@ -744,7 +744,7 @@ function buildInternshipDraftDocxV615(app,docxApi){
  const spacingSingle={line:240,lineRule:'auto'},spacingYth={line:312,lineRule:'auto'},spacingBody={line:360,lineRule:'auto'};
  const hanging049=cmToTwip(.49);
  const noBorder={top:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},bottom:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},left:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},right:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},insideHorizontal:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},insideVertical:{style:BorderStyle.NONE,size:0,color:'FFFFFF'}};
- const run=(text,o={})=>new TextRun({text:String(text??''),font:o.font||fontName,size:o.size||baseSize,bold:!!o.bold,italics:!!o.italics,color:o.color,break:o.break||0});
+ const run=(text,o={})=>new TextRun({text:String(text??'')||'\u00a0',font:o.font||fontName,size:o.size||baseSize,bold:!!o.bold,italics:!!o.italics,color:o.color,break:o.break||0});
  const para=(content,o={})=>new Paragraph({alignment:o.alignment||AlignmentType.JUSTIFIED,spacing:{before:0,after:o.after??0,...(o.spacing||spacingSingle)},indent:o.indent,children:Array.isArray(content)?content:[run(content,o)]});
  const leftPara=(content,o={})=>para(content,Object.assign({},o,{alignment:o.alignment||AlignmentType.LEFT}));
  const centerPara=(content,o={})=>para(content,Object.assign({},o,{alignment:AlignmentType.CENTER}));
@@ -804,19 +804,21 @@ function buildInternshipDraftDocxV615(app,docxApi){
 /* END_INTERNSHIP_DOCX_V615 */
 async function exportInternshipDraftDocxV615(payload){
  const docxApi=await ensureInternshipDocxLibraryV615(),doc=buildInternshipDraftDocxV615(payload,docxApi),blob=await docxApi.Packer.toBlob(doc);
+ const signature=new Uint8Array(await blob.slice(0,4).arrayBuffer());if(signature[0]!==0x50||signature[1]!==0x4b)throw new Error('File Word yang dibentuk tidak valid.');
  saveInternshipBlobV615(blob,payload.file_name);
 }
+function internshipDraftPayloadV643(id){const bundle=S.cache.internship||{},app=(bundle.applications||[]).find(x=>String(x.application_id)===String(id));if(!app)throw new Error('Data pengajuan magang tidak ditemukan. Muat ulang halaman lalu coba lagi.');const students=bundle.reference?.students||[],studentMap=new Map(students.map(x=>[String(x.student_id),x])),owner=studentMap.get(String(app.student_id))||{student_id:app.student_id,name:app.student_name,program_name:app.program_name,email:app.email},prefs=Array.isArray(app.preferences)?app.preferences:[],first=prefs.find(x=>x.office_name)||{},rawMembers=Array.isArray(app.members)&&app.members.length?app.members:[{student_id:app.student_id}],anggota=rawMembers.map(m=>{const st=studentMap.get(String(m.student_id))||{};return{nama:m.name||m.nama||st.name||m.student_id||'-',nim:m.student_id||m.nim||st.student_id||'-',prodi:m.program_name||m.prodi||st.program_name||'-',unit:m.unit||app.office_name||first.office_name||'-'}}),picStudent=studentMap.get(String(app.pic_student_id))||anggota.find(x=>String(x.nim)===String(app.pic_student_id))||owner,namaKantor=app.office_name||first.office_name||first.eselon2||first.eselon1||'Instansi Tujuan',jabatanPimpinan=app.leader_position||first.eselon2||first.eselon1||'Pimpinan',alamatKantor=app.office_address||first.location||'-',safeName=String(namaKantor).replace(/[^a-zA-Z0-9À-ÿ._ -]+/g,'').trim().replace(/\s+/g,'_').slice(0,70)||'Instansi';return{application_id:app.application_id,namaKantor,jabatanPimpinan,alamatKantor,sapaanPimpinan:app.leader_salutation||'Bapak/Ibu',recipientLines:[`${jabatanPimpinan} ${namaKantor}`.trim(),alamatKantor],anggota,pic:{nama:app.pic_name||picStudent.name||picStudent.nama||anggota[0]?.nama||'-',wa:app.pic_wa||app.no_wa||'-',email:app.pic_email||picStudent.email||owner.email||'-'},academicPeriod:S.boot?.config?.ACADEMIC_YEAR||'tahun akademik berjalan',file_name:`Draft_Surat_Magang_${safeName}.docx`}}
 async function internshipDoc(id){
  busy(true);
  try{
    try{
-     const payload=await api('getInternshipDraftPayload',id);
+     const payload=internshipDraftPayloadV643(id);
      await exportInternshipDraftDocxV615(payload);
      toast('Draft surat Word berhasil dibuat dengan format surat yang rapi.');
    }catch(primaryError){
      console.warn('Generator DOCX langsung gagal; memakai generator cadangan.',primaryError);
-     const result=await api('generateInternshipDraftLetter',id);
-     if(!result?.base64)throw primaryError;
+     const result=await api('generateInternshipDraftLetter',{application_id:id});
+     if(!result?.base64)throw new Error(primaryError?.message||'Draft surat .docx gagal dibuat.');
      downloadBase64File(result.file_name,result.mime_type,result.base64);
      toast('Draft surat berhasil diunduh menggunakan generator cadangan.');
    }
@@ -1401,7 +1403,7 @@ window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if(
 if(!window.__portalLoginBootstrapReadyV52){forceLoginVisible('Mesin Fast Login v4.7 belum terpasang lengkap.');} safeStartV52();
 
 function mockRpc(req){
- const boot={app:{name:'Skripsi & Magang',version:'6.42.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
+ const boot={app:{name:'Skripsi & Magang',version:'6.43.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
  if(req.action==='auth.login'){if(req.identifier!=='admin'||req.password!=='admin123')return{ok:false,message:'Username atau password salah.'};return{ok:true,token:'demo',boot}}
  if(req.action==='auth.resume')return req.token?{ok:true,token:req.token,boot}:{ok:false,message:'Sesi habis'};
  if(req.action==='auth.requestReset')return{ok:true,destination:'a***@example.ac.id'};if(req.action==='auth.resetPassword')return{ok:true,message:'Password berhasil direset.'};if(req.action==='auth.logout')return{ok:true};
