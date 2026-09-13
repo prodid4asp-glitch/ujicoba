@@ -51,7 +51,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.55.0'
+  VERSION:'6.56.0'
 });
 
 (function(){
@@ -165,7 +165,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.55.0</div>
+      <div class="hint" style="margin-top:16px">Versi 6.56.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -214,7 +214,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
       setText('academicYear','Tahun akademik '+((boot.config&&boot.config.ACADEMIC_YEAR)||'2026/2027'));
-      setText('version','v'+((boot.app&&boot.app.version)||'6.55.0'));
+      setText('version','v'+((boot.app&&boot.app.version)||'6.56.0'));
       setText('userName',user.name||user.username||'Pengguna');
       var roles={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
@@ -1423,7 +1423,7 @@ function examMinutesHtmlV654(row,list,signatures){
 function examMinutesCssV654(){return `<style>.minutes-pdf-v654{box-sizing:border-box;width:215.9mm;height:329.2mm;margin:0;padding:15mm 20mm 20mm;overflow:hidden;background:#fff;color:#000;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt;line-height:1}.minutes-pdf-v654 *{box-sizing:border-box;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt}.minutes-pdf-v654 .ba-masthead{display:grid;grid-template-columns:1fr 50mm;align-items:start;gap:8mm}.minutes-pdf-v654 .ba-institution{text-transform:uppercase;line-height:1}.minutes-pdf-v654 .ba-institution div{white-space:nowrap}.minutes-pdf-v654 .ba-form-code{width:50mm;height:16mm;border:2px solid #222;display:flex;align-items:center;justify-content:center;font-size:15pt;font-weight:700;white-space:nowrap}.minutes-pdf-v654 .ba-stage{margin:7mm 0;text-align:right;font-size:21pt}.minutes-pdf-v654 .ba-title{text-align:center;text-transform:uppercase;margin-bottom:7mm}.minutes-pdf-v654 .ba-title div{margin-top:6pt}.minutes-pdf-v654 table{border-collapse:collapse;table-layout:fixed;width:175.8mm}.minutes-pdf-v654 .ba-identity{margin-bottom:7mm}.minutes-pdf-v654 .ba-identity td{padding:1.25mm 2mm;vertical-align:top}.minutes-pdf-v654 .ba-identity td:first-child{width:60mm;white-space:nowrap}.minutes-pdf-v654 .ba-identity td:nth-child(2){width:4.8mm;padding-left:0;padding-right:0;text-align:center}.minutes-pdf-v654 .ba-identity td:nth-child(3){width:111mm;text-align:justify;line-height:1.2;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-score td,.minutes-pdf-v654 .ba-examiners th,.minutes-pdf-v654 .ba-examiners td{border:1px solid #222;padding:2.6mm 2mm;vertical-align:middle}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-examiners th{background:#d9d9d9;text-align:center;font-weight:700}.minutes-pdf-v654 .ba-score td:first-child{text-transform:uppercase}.minutes-pdf-v654 .center{text-align:center}.minutes-pdf-v654 .ba-conclusion{display:grid;grid-template-columns:42.5mm 4.4mm 128.9mm;width:175.8mm;margin-top:5mm}.minutes-pdf-v654 .ba-conclusion>div{padding:0 2mm}.minutes-pdf-v654 .ba-conclusion>div:first-child{padding-left:2mm}.minutes-pdf-v654 .ba-conclusion>div:nth-child(2){padding:0;text-align:center}.minutes-pdf-v654 .ba-conclusion>div:last-child{min-height:18mm;text-align:justify;white-space:pre-line;line-height:1.25;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-date{margin:4mm 0 6mm;text-align:right}.minutes-pdf-v654 .ba-examiner-heading{margin-bottom:4mm}.minutes-pdf-v654 .ba-examiners th:nth-child(2){letter-spacing:.25em}.minutes-pdf-v654 .ba-examiners td:first-child,.minutes-pdf-v654 .ba-examiners td:nth-child(3){text-align:center}.minutes-pdf-v654 .ba-examiner-row td{height:18mm}.minutes-pdf-v654 .ba-examiners td:nth-child(2){line-height:1.15;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-signature{height:13mm;display:flex;align-items:center;justify-content:center;text-align:center}.minutes-pdf-v654 .ba-signature img{display:block;max-width:39mm;max-height:16mm;object-fit:contain}.minutes-pdf-v654 .ba-missing-sign{font-size:10pt;line-height:1.1}.minutes-pdf-v654 .ba-notes{margin-top:7mm;line-height:1.15}</style>`}
 
 function mockRpc(req){
- const boot={app:{name:'Skripsi & Magang',version:'6.55.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
+ const boot={app:{name:'Skripsi & Magang',version:'6.56.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
  if(req.action==='auth.login'){if(req.identifier!=='admin'||req.password!=='admin123')return{ok:false,message:'Username atau password salah.'};return{ok:true,token:'demo',boot}}
  if(req.action==='auth.resume')return req.token?{ok:true,token:req.token,boot}:{ok:false,message:'Sesi habis'};
  if(req.action==='auth.requestReset')return{ok:true,destination:'a***@example.ac.id'};if(req.action==='auth.resetPassword')return{ok:true,message:'Password berhasil direset.'};if(req.action==='auth.logout')return{ok:true};
