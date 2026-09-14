@@ -38,6 +38,78 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .monitor-body{padding:0 17px 17px}.monitor-table-scroll{margin-top:14px;max-height:calc(100vh - 300px);overflow:auto;border:1px solid var(--line)}.monitor-table-scroll .tablewrap{overflow:visible;border:0;border-radius:0}.monitor-table-scroll .table th{position:sticky;top:0;z-index:3;background:#f8fafc}.monitor-table-scroll .table{min-width:1000px}
 .availability-table .table{width:100%;min-width:0;table-layout:fixed}.availability-table .table th,.availability-table .table td{padding:8px 7px;font-size:12px;overflow-wrap:anywhere}.availability-table .table th:nth-child(1),.availability-table .table td:nth-child(1){width:5%}.availability-table .table th:nth-child(2),.availability-table .table td:nth-child(2){width:18%}.availability-table .table th:nth-child(3),.availability-table .table td:nth-child(3){width:10%}.availability-table .table th:nth-child(4),.availability-table .table td:nth-child(4){width:23%}.availability-table .table th:nth-child(5),.availability-table .table td:nth-child(5){width:23%}.availability-table .table th:nth-child(n+6),.availability-table .table td:nth-child(n+6){width:7%;text-align:center}
 .monitor-body .stats .stat small{font-size:11.5px}.monitor-body .stats .stat b{font-size:19px}.monitor-body .filterbar{padding:9px;gap:8px}.monitor-body .filterbar .field label{font-size:11.5px}.monitor-body .filterbar input,.monitor-body .filterbar select{padding:8px 9px;font-size:12px}
+
+/* Compact academic lists; sticky offset follows the actual header height. */
+.compact-academic>.filterbar,.mentee-search{
+ position:sticky;top:var(--portal-header-height,72px);z-index:4;
+ padding:7px 9px;margin:0 0 10px;gap:7px;background:#fff;
+ box-shadow:0 2px 5px rgba(15,23,42,.06);
+}
+.filterbar.mentee-search{display:flex;align-items:center}
+.mentee-search .field{width:min(100%,380px);min-width:0}
+.compact-academic>.filterbar .field label,.mentee-search .field label{font-size:11px;margin:0 0 3px;line-height:1.3}
+.compact-academic>.filterbar input,.compact-academic>.filterbar select,.mentee-search input{
+ height:32px;min-height:32px;padding:5px 9px;font-size:12px;line-height:1.4
+}
+.compact-academic>.filterbar .btn{min-height:32px;padding:5px 10px;font-size:12px}
+[data-mentee-group]{margin:0 0 12px;min-width:0}
+[data-mentee-group]>h3{font-size:13px;line-height:1.4;margin:10px 0 6px;color:var(--brand)}
+[data-mentee-card]{padding:10px 12px;margin:0 0 7px;min-width:0;box-shadow:none;border-radius:5px}
+[data-mentee-card]>h4{font-size:13px;line-height:1.4;margin:0 0 2px;overflow-wrap:anywhere}
+[data-mentee-card]>.hint{font-size:11px;line-height:1.4;margin:2px 0 6px}
+[data-mentee-card]>.hint:last-child{margin-bottom:0}
+[data-mentee-card] .table th,[data-mentee-card] .table td{padding:6px 8px;font-size:12px;line-height:1.4}
+[data-mentee-card] .btn.small{padding:5px 8px;font-size:11px}
+[data-mentee-card] .schedule-cards{gap:7px}
+[data-mentee-card] .schedule-card{padding:0}
+[data-mentee-card] .schedule-card-head{padding:9px 104px 9px 10px;gap:6px}
+[data-mentee-card] .schedule-card-title{padding:8px 10px}
+[data-mentee-card] .schedule-card-title h4{font-size:13px;margin-bottom:4px}
+[data-mentee-card] .schedule-bottom>div{padding:7px 9px}
+[data-mentee-card] .schedule-card-actions{padding:7px 9px;gap:5px}
+[data-mentee-card] .schedule-assessment{padding:9px 10px}
+@media(max-width:760px){
+ .compact-academic>.filterbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .compact-academic>.filterbar>.field:first-child{grid-column:1/-1}
+ .filterbar.mentee-search{padding:6px 8px}
+ .mentee-search .field{width:100%}
+ [data-mentee-card]{padding:9px 10px}
+}
+@media print{.compact-academic>.filterbar,.mentee-search{position:static;box-shadow:none}}
+
+/* Dense student cards, scoped to academic mentee lists. */
+[data-mentee-card]{padding:7px 9px;margin-bottom:5px;border-radius:4px}
+.mentee-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 9px;margin-bottom:5px}
+.mentee-identity h4{font-size:13px;line-height:1.35;margin:0;overflow-wrap:anywhere}
+.mentee-identity .hint{font-size:11px;line-height:1.35;margin:0}
+[data-mentee-card]:has(>.hint:last-child){display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:3px 12px}
+[data-mentee-card]:has(>.hint:last-child)>.mentee-identity{margin:0}
+[data-mentee-card]>.hint:last-child{margin:0;font-size:11px}
+[data-mentee-group]{margin-bottom:8px}
+[data-mentee-group]>h3{margin:8px 0 5px;font-size:12px}
+[data-mentee-card] .table th,[data-mentee-card] .table td{padding:4px 6px;font-size:12px;line-height:1.35}
+[data-mentee-card] .tablewrap{border-radius:3px}
+[data-mentee-card] .schedule-cards{gap:5px}
+[data-mentee-card] .schedule-card-head{grid-template-columns:repeat(4,minmax(0,1fr));padding:6px 99px 6px 8px;gap:4px 8px}
+[data-mentee-card] .schedule-card-head>.schedule-meta:first-child{display:none}
+[data-mentee-card] .schedule-toggle{top:5px;right:5px;min-width:80px}
+[data-mentee-card] .schedule-card-title{padding:6px 8px}
+[data-mentee-card] .schedule-card-title h4{margin-bottom:2px;font-size:12px}
+[data-mentee-card] .schedule-meta small,[data-mentee-card] .schedule-bottom small{margin-bottom:1px}
+[data-mentee-card] .schedule-bottom>div{padding:5px 7px}
+[data-mentee-card] .schedule-card-actions{padding:5px 7px;gap:4px}
+[data-mentee-card] .schedule-assessment{padding:6px 8px}
+[data-mentee-card] .schedule-assessment h4{margin:0 0 4px;font-size:12px}
+[data-mentee-card] .schedule-assessment h5{margin:6px 0 0;font-size:12px}
+[data-mentee-card] .score-chip{min-width:100px;padding:4px 6px}
+[data-mentee-card] .schedule-score-row{margin-top:5px;gap:4px}
+[data-mentee-card] .score-table,[data-mentee-card] .score-notes{margin-top:6px}
+[data-mentee-card] .score-note{padding:5px 7px;margin-top:4px}
+@media(max-width:760px){
+ [data-mentee-card]{padding:7px 8px}
+ [data-mentee-card] .schedule-card-head{grid-template-columns:repeat(2,minmax(0,1fr))}
+ [data-mentee-card] .schedule-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
@@ -51,7 +123,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.61.0'
+  VERSION:'6.61.2'
 });
 
 (function(){
@@ -165,7 +237,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.57.0</div>
+      <div class="hint" style="margin-top:16px">Versi ${window.PORTAL_CONFIG.VERSION}</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -214,7 +286,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
       setText('academicYear','Tahun akademik '+((boot.config&&boot.config.ACADEMIC_YEAR)||'2026/2027'));
-      setText('version','v'+((boot.app&&boot.app.version)||'6.57.0'));
+      setText('version','Versi '+window.PORTAL_CONFIG.VERSION);
       setText('userName',user.name||user.username||'Pengguna');
       var roles={admin:'Admin / Prodi',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
@@ -342,7 +414,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">v4.0.0</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.61.2</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -510,7 +582,7 @@ if(window.__pendingPortalLoginV52){
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
 function isPageAllowed(p){return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
-function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment')S.page='dashboard';if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='v'+(b.app?.version||'6.30.0');$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
+function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment')S.page='dashboard';if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent='Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment');$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
 function markNav(){document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));$('pageTitle').textContent=LABEL[S.page]||'Portal'}
 async function login(e){
   // v4.7: satu-satunya jalur login adalah bootstrap kecil di atas.
@@ -650,7 +722,7 @@ function renderMentee661(kind,b){
   if(kind==='guidance')return table(rows,[['guidance_date','Tanggal',guidanceDateV630],['topic','Topik'],['student_note','Catatan Mahasiswa'],['lecturer_feedback','Masukan Dosen']],r=>`<button class="btn secondary small" data-action="guidance-feedback" data-id="${attr(r.guidance_id)}">${r.lecturer_feedback?'Edit Masukan':'Tambah Masukan'}</button>`);
   return table(rows,[['document_type','Jenis',v=>esc(DOCUMENT_LABEL[v]||v)],['file_name','File'],['uploaded_at','Waktu',dt],['similarity_percent','Similarity',v=>v===null||v===undefined||v===''?'-':esc(v)+'%'],['exam_stage','Tahap Ujian'],['document_id','Persetujuan',(_,r)=>documentReviewSummaryV636(r)],['file_url','Tautan',v=>v?`<a href="${attr(v)}" target="_blank" rel="noopener">Buka</a>`:'-']],r=>r.can_review?`<button class="btn primary small" data-action="document-review" data-id="${attr(r.document_id)}">${documentApprovalExistsV638(r)?'Ubah Persetujuan':'Beri Persetujuan'}</button>`:'');
  }
- $('content').innerHTML=`<div class="filterbar"><div class="field"><label>Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(q)}" placeholder="Nama, NIM, judul, catatan..."></div></div>`+groups.map(g=>`<section data-mentee-group><h3>${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card style="margin-bottom:14px;min-width:0"><h4>${esc(s.student_name)}</h4><p class="hint">${esc(s.student_id)}${s.is_mentee?'':' · Sebagai pembahas/penguji'}</p>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
+ $('content').innerHTML=`<div class="filterbar mentee-search"><div class="field"><label for="menteeSearch661">Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(q)}" placeholder="Nama, NIM, judul, catatan..."></div></div>`+groups.map(g=>`<section data-mentee-group><h3>${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card><header class="mentee-identity"><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.is_mentee?'':' · Sebagai pembahas/penguji'}</span></header>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
  const filter=()=>{const query=$('menteeSearch661').value.toLowerCase().trim();S.cache.menteeSearch661={...(S.cache.menteeSearch661||{}),[kind]:query};document.querySelectorAll('[data-mentee-card]').forEach(el=>el.hidden=!el.textContent.toLowerCase().includes(query));document.querySelectorAll('[data-mentee-group]').forEach(el=>el.hidden=![...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.hidden));};
  $('menteeSearch661').oninput=filter;filter();restoreDetailStatesV632($('content'));
  if(kind==='documents')startDocumentsRealtimeV620();
@@ -671,7 +743,7 @@ function renderAdminTab(tab,data){
  search.oninput=filter;col.onchange=()=>{state.value='';options();filter();};value.onchange=filter;options();filter();
 }
 
-function renderPage(p,b){b=normalizeThesisLabels660(b||{});let result;if(p==='dashboard')result=renderDashboard(b.dashboard||{});else if(p==='supervisor')result=renderSupervisor(b);else if(p==='guidance')result=renderGuidance(b);else if(p==='documents')result=renderDocuments(b);else if(p==='proposal_seminar')result=renderAcademicSchedule(b,'PROPOSAL_SEMINAR');else if(p==='thesis_exam')result=renderAcademicSchedule(b,'THESIS_EXAM');else if(p==='letters')result=renderLetters(b);else if(p==='internship')result=renderInternship(b);else if(p==='profile')result=renderProfile(b.profile||{});const frontend=String(window.PORTAL_CONFIG?.VERSION||''),backend=String(S.boot?.app?.version||'');if(frontend&&backend&&frontend!==backend&&$('content'))$('content').insertAdjacentHTML('afterbegin',`<div class="alert error"><b>Versi frontend dan API berbeda.</b><br>Frontend v${esc(frontend)}, sedangkan Edge Function v${esc(backend)}. Deploy ulang Edge Function portal-api menggunakan index.ts versi terbaru.</div>`);return result}
+function renderPage(p,b){$('content').classList.toggle('compact-academic',['guidance','documents','proposal_seminar','thesis_exam'].includes(p));b=normalizeThesisLabels660(b||{});let result;if(p==='dashboard')result=renderDashboard(b.dashboard||{});else if(p==='supervisor')result=renderSupervisor(b);else if(p==='guidance')result=renderGuidance(b);else if(p==='documents')result=renderDocuments(b);else if(p==='proposal_seminar')result=renderAcademicSchedule(b,'PROPOSAL_SEMINAR');else if(p==='thesis_exam')result=renderAcademicSchedule(b,'THESIS_EXAM');else if(p==='letters')result=renderLetters(b);else if(p==='internship')result=renderInternship(b);else if(p==='profile')result=renderProfile(b.profile||{});const frontend=String(window.PORTAL_CONFIG?.VERSION||''),backend=String(S.boot?.app?.version||'');if(frontend&&backend&&frontend!==backend&&$('content'))$('content').insertAdjacentHTML('afterbegin',`<div class="alert error"><b>Versi frontend dan API berbeda.</b><br>Frontend v${esc(frontend)}, sedangkan Edge Function v${esc(backend)}. Deploy ulang Edge Function portal-api menggunakan index.ts versi terbaru.</div>`);return result}
 function cards(rows=[]){return rows.length?`<div class="grid stats">${rows.map(x=>`<div class="card stat"><small>${esc(x.label)}</small><b>${esc(x.value)}</b></div>`).join('')}</div>`:''}
 function table(rows,cols,actions){if(!rows?.length)return'<div class="card empty">Belum ada data.</div>';return `<div class="tablewrap"><table class="table"><thead><tr>${cols.map(c=>`<th>${esc(c[1])}</th>`).join('')}${actions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map((r,i)=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](r[c[0]],r):esc(r[c[0]]??'-')}</td>`).join('')}${actions?`<td>${actions(r,i)}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
 function csvSourceCardV60(){return''}
@@ -1519,7 +1591,7 @@ function examMinutesHtmlV654(row,list,signatures){
 function examMinutesCssV654(){return `<style>.minutes-pdf-v654{box-sizing:border-box;width:215.9mm;height:329.2mm;margin:0;padding:15mm 20mm 20mm;overflow:hidden;background:#fff;color:#000;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt;line-height:1}.minutes-pdf-v654 *{box-sizing:border-box;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt}.minutes-pdf-v654 .ba-masthead{display:grid;grid-template-columns:1fr 50mm;align-items:start;gap:8mm}.minutes-pdf-v654 .ba-institution{text-transform:uppercase;line-height:1}.minutes-pdf-v654 .ba-institution div{white-space:nowrap}.minutes-pdf-v654 .ba-form-code{width:50mm;height:16mm;border:2px solid #222;display:flex;align-items:center;justify-content:center;font-size:15pt;font-weight:700;white-space:nowrap}.minutes-pdf-v654 .ba-stage{margin:7mm 0;text-align:right;font-size:21pt}.minutes-pdf-v654 .ba-title{text-align:center;text-transform:uppercase;margin-bottom:7mm}.minutes-pdf-v654 .ba-title div{margin-top:6pt}.minutes-pdf-v654 table{border-collapse:collapse;table-layout:fixed;width:175.8mm}.minutes-pdf-v654 .ba-identity{margin-bottom:7mm}.minutes-pdf-v654 .ba-identity td{padding:1.25mm 2mm;vertical-align:top}.minutes-pdf-v654 .ba-identity td:first-child{width:60mm;white-space:nowrap}.minutes-pdf-v654 .ba-identity td:nth-child(2){width:4.8mm;padding-left:0;padding-right:0;text-align:center}.minutes-pdf-v654 .ba-identity td:nth-child(3){width:111mm;text-align:justify;line-height:1.2;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-score td,.minutes-pdf-v654 .ba-examiners th,.minutes-pdf-v654 .ba-examiners td{border:1px solid #222;padding:2.6mm 2mm;vertical-align:middle}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-examiners th{background:#d9d9d9;text-align:center;font-weight:700}.minutes-pdf-v654 .ba-score td:first-child{text-transform:uppercase}.minutes-pdf-v654 .center{text-align:center}.minutes-pdf-v654 .ba-conclusion{display:grid;grid-template-columns:42.5mm 4.4mm 128.9mm;width:175.8mm;margin-top:5mm}.minutes-pdf-v654 .ba-conclusion>div{padding:0 2mm}.minutes-pdf-v654 .ba-conclusion>div:first-child{padding-left:2mm}.minutes-pdf-v654 .ba-conclusion>div:nth-child(2){padding:0;text-align:center}.minutes-pdf-v654 .ba-conclusion>div:last-child{min-height:18mm;text-align:justify;white-space:pre-line;line-height:1.25;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-date{margin:4mm 0 6mm;text-align:right}.minutes-pdf-v654 .ba-examiner-heading{margin-bottom:4mm}.minutes-pdf-v654 .ba-examiners th:nth-child(2){letter-spacing:.25em}.minutes-pdf-v654 .ba-examiners td:first-child,.minutes-pdf-v654 .ba-examiners td:nth-child(3){text-align:center}.minutes-pdf-v654 .ba-examiner-row td{height:18mm}.minutes-pdf-v654 .ba-examiners td:nth-child(2){line-height:1.15;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-signature{height:13mm;display:flex;align-items:center;justify-content:center;text-align:center}.minutes-pdf-v654 .ba-signature img{display:block;max-width:39mm;max-height:16mm;object-fit:contain}.minutes-pdf-v654 .ba-missing-sign{font-size:10pt;line-height:1.1}.minutes-pdf-v654 .ba-notes{margin-top:7mm;line-height:1.15}</style>`}
 
 function mockRpc(req){
- const boot={app:{name:'Skripsi & Magang',version:'6.57.0'},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027',ACTIVE_SEMESTER:'Gasal'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
+ const boot={app:{name:'Skripsi & Magang',version:window.PORTAL_CONFIG.VERSION},user:{name:'Preview Admin',username:'admin',role_id:'admin',email:'admin@example.ac.id'},config:{APP_TITLE:'Skripsi & Magang',INSTITUTION_NAME:'Preview Prodi',ACADEMIC_YEAR:'2026/2027',ACTIVE_SEMESTER:'Gasal'},selectionWindow:{start:'2026-08-01T00:00:00',end:'2026-09-30T23:59:59',open:true},nav:[{id:'dashboard',label:'Dashboard'},{id:'supervisor',label:'Pembimbing'},{id:'guidance',label:'Bimbingan'},{id:'documents',label:'Dokumen'},{id:'proposal_seminar',label:'Seminar Proposal'},{id:'thesis_exam',label:'Ujian Skripsi'},{id:'letters',label:'Surat Riset'},{id:'internship',label:'Magang'},{id:'profile',label:'Profil Saya'},{id:'admin',label:'Administrasi'}]};
  if(req.action==='auth.login'){if(req.identifier!=='admin'||req.password!=='admin123')return{ok:false,message:'Username atau password salah.'};return{ok:true,token:'demo',boot}}
  if(req.action==='auth.resume')return req.token?{ok:true,token:req.token,boot}:{ok:false,message:'Sesi habis'};
  if(req.action==='auth.requestReset')return{ok:true,destination:'a***@example.ac.id'};if(req.action==='auth.resetPassword')return{ok:true,message:'Password berhasil direset.'};if(req.action==='auth.logout')return{ok:true};
@@ -1528,6 +1600,20 @@ function mockRpc(req){
  if(req.action==='api')return{ok:true,data:req.name==='recommendSupervisors'?[{lecturer_id:'DSN1',name:'Dosen Preview',expertise:'Akuntansi sektor publik, pembiayaan infrastruktur',score:94,current_load:2,quota:8,remaining_quota:6,exact_field_match:false,exact_course_match:true,specialization_match:true,specialization_match_type:'EXACT',specialization_course_ids:'MK-SKRIPSI',specialization_course_names:'SKR · Skripsi',matched_specialization_course_names:'SKR · Skripsi',specialization_match_keywords:[],matched_field_names:[],match_keywords:['keuangan','publik'],score_breakdown:{title_abstract:38,specialization:35,field_semantic:16,capacity:5}}]:{ok:true}};
  return{ok:false,message:'Mock action unknown'}
 }
+})();
+</script>
+
+<script>
+(function(){
+ const header=document.querySelector('.top');
+ if(!header)return;
+ const update=()=>{
+  const height=header.getBoundingClientRect().height;
+  if(height>0)document.documentElement.style.setProperty('--portal-header-height',height+'px');
+ };
+ if(window.ResizeObserver)new ResizeObserver(update).observe(header);
+ window.addEventListener('resize',update,{passive:true});
+ update();
 })();
 </script>
 </body>
