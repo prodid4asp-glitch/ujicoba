@@ -110,6 +110,18 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
  [data-mentee-card] .schedule-card-head{grid-template-columns:repeat(2,minmax(0,1fr))}
  [data-mentee-card] .schedule-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* v6.62: kartu mahasiswa lebih terbaca + filter admin. */
+.mentee-filterbar{grid-template-columns:minmax(220px,2fr) repeat(4,minmax(135px,1fr)) auto}
+.mentee-period-title{font-size:15px!important;line-height:1.35!important;font-weight:700!important;margin:13px 0 7px!important;color:var(--brand)!important}
+.mentee-identity{display:grid!important;grid-template-columns:30px minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:baseline!important;margin-bottom:6px!important}
+.mentee-seq{grid-row:1 / span 2;align-self:start;display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 5px;border:1px solid var(--line);background:#f8fafc;color:#475467;font-size:11px;font-weight:700;border-radius:3px}
+.mentee-identity h4{grid-column:2;font-size:13.5px!important;line-height:1.35!important;margin:0!important;font-weight:400!important;overflow-wrap:anywhere}
+.mentee-identity .hint{grid-column:2;font-size:11.5px!important;line-height:1.35!important;margin:0!important}
+.mentee-card-meta{font-size:11px;color:var(--muted);margin-left:4px}
+.mentee-filter-count{display:inline-flex;align-items:center;min-height:32px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+@media(max-width:1050px){.mentee-filterbar{grid-template-columns:repeat(3,minmax(0,1fr))}.mentee-filterbar>.field:first-child{grid-column:1/-1}}
+@media(max-width:760px){.mentee-filterbar{grid-template-columns:1fr 1fr}.mentee-filterbar>.field:first-child,.mentee-filterbar>.mentee-filter-count{grid-column:1/-1}.mentee-period-title{font-size:14px!important}}
 </style>
 </head>
 <body>
@@ -123,7 +135,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.61.2'
+  VERSION:'6.62.0'
 });
 
 (function(){
@@ -237,7 +249,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.61.2</div>
+      <div class="hint" style="margin-top:16px">Versi 6.62.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -414,7 +426,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.61.2</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.62.0</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -685,47 +697,54 @@ async function deleteMyGuidance661(id){
 }
 function recordPeriod661(r){
  if(r.academic_year&&r.semester)return r.academic_year+'|'+String(r.semester).replace('Ganjil','Gasal');
+ const raw=r.guidance_date||r.uploaded_at||r.event_date||r.created_at||'';
+ if(raw){const d=new Date(String(raw).length===10?String(raw)+'T00:00:00':raw);if(!isNaN(d)){const y=d.getFullYear(),m=d.getMonth()+1;return (m>=7?`${y}/${y+1}`:`${y-1}/${y}`)+'|'+(m>=7?'Gasal':'Genap');}}
  return '';
 }
 function menteeGroups661(roster,records){
  const groups=new Map();
- function add(key,label,student,data){
-  if(!groups.has(key))groups.set(key,{key,label,students:[]});
+ function add(key,label,student,data,academicYear='',semester=''){
+  if(!groups.has(key))groups.set(key,{key,label,academicYear,semester,students:[]});
   groups.get(key).students.push({...student,data});
  }
  for(const student of roster){
   const own=records.filter(r=>String(r.student_id)===String(student.student_id));
   const ps=[...new Map((student.periods||[]).map(p=>[p.academic_year+'|'+p.semester,p])).values()];
+  if(!ps.length){for(const key of [...new Set(own.map(recordPeriod661).filter(Boolean))]){const [academic_year,semester]=key.split('|');ps.push({period_id:'',academic_year,semester});}}
   const memberships=new Set(ps.map(p=>p.academic_year+'|'+p.semester));
   const periodKey=r=>{const p=ps.find(p=>r.period_id&&String(p.period_id)===String(r.period_id));return p?p.academic_year+'|'+p.semester:recordPeriod661(r);};
   for(const p of ps){const key=p.academic_year+'|'+p.semester;
-   add(key,'Semester '+p.semester+' Tahun Akademik '+p.academic_year,student,own.filter(r=>periodKey(r)===key||(!periodKey(r)&&!r.period_id&&ps.length===1)));
+   add(key,'Semester '+p.semester+' Tahun Akademik '+p.academic_year,student,own.filter(r=>periodKey(r)===key||(!periodKey(r)&&!r.period_id&&ps.length===1)),p.academic_year,p.semester);
   }
   const unassigned=own.filter(r=>!memberships.has(periodKey(r))&&(periodKey(r)||r.period_id||ps.length!==1));
-  if(!ps.length||unassigned.length)add('unassigned','Periode belum ditetapkan / data belum tertaut periode',student,unassigned);
+  if(!ps.length||unassigned.length)add('unassigned','Periode belum ditetapkan / data belum tertaut periode',student,unassigned,'','');
  }
  return [...groups.values()].sort((a,b)=>a.key.localeCompare(b.key,'id')).map(g=>({...g,students:g.students.sort((a,b)=>a.student_name.localeCompare(b.student_name,'id'))}));
 }
 function renderMentee661(kind,b){
- const schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
- const records=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[];
+ const role=S.boot.user.role_id,schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
+ const rawRecords=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[],records=schedule?rawRecords.map((r,i)=>Object.assign({_sourceIndex:i},r)):rawRecords;
  S.cache.menteeView661={kind,b};S.cache.guidance=b.guidance||[];S.cache.theses=b.theses||[];
  S.cache.documentBundleV620=b;S.cache.scheduleBundle=b;if(schedule)S.cache.scheduleType=kind;
- const q=S.cache.menteeSearch661?.[kind]||'';
- const groups=menteeGroups661(b.menteeRoster||[],records);
- const actions=r=>`${!proposal&&b.canScoreExam?`<button class="btn primary small" data-action="exam-score" data-id="${attr(r.schedule_id)}">${myExamScoreV637(b,r.schedule_id)?'Ubah Nilai':'Isi Nilai'}</button>`:''}${!proposal&&b.canScoreExam&&r.final_document?`<button class="btn secondary small" data-action="exam-final-approval" data-id="${attr(r.schedule_id)}">Persetujuan Skripsi Final</button>`:''}${proposal&&b.canReview?`<button class="btn secondary small" data-action="schedule-review" data-id="${attr(r.schedule_id)}">Isi Saran dan Masukan</button>`:''}`;
+ const saved=(S.cache.menteeFilters661||{})[kind]||{},groups=menteeGroups661(b.menteeRoster||[],records);
+ const years=[...new Set(groups.map(g=>g.academicYear).filter(Boolean))].sort().reverse(),semesters=[...new Set(groups.map(g=>g.semester).filter(Boolean))],programs=[...new Set((b.menteeRoster||[]).map(s=>String(s.program_name||'').trim()).filter(Boolean))].sort((a,z)=>a.localeCompare(z,'id'));
+ const actions=r=>`${!proposal&&b.canScoreExam?`<button class="btn primary small" data-action="exam-score" data-id="${attr(r.schedule_id)}">${myExamScoreV637(b,r.schedule_id)?'Ubah Nilai':'Isi Nilai'}</button>`:''}${!proposal&&b.canScoreExam&&r.final_document?`<button class="btn secondary small" data-action="exam-final-approval" data-id="${attr(r.schedule_id)}">Persetujuan Skripsi Final</button>`:''}${proposal&&b.canReview?`<button class="btn secondary small" data-action="schedule-review" data-id="${attr(r.schedule_id)}">${scheduleReviewForRow(b,r)?'Ubah Saran dan Masukan':'Isi Saran dan Masukan'}</button>`:''}${b.canUploadResources?`<button class="btn secondary small" data-action="schedule-resources" data-id="${attr(r.schedule_id)}">${r.recording_url||r.presentation_url?'Ubah Tautan':'Tambah Tautan'}</button>`:''}${b.canManage?`<button class="btn secondary small" data-action="schedule-edit" data-index="${attr(r._sourceIndex)}">Edit</button><button class="btn danger small" data-action="schedule-delete" data-id="${attr(r.schedule_id)}">Hapus</button>`:''}`;
  function content(rows){
   if(!rows.length)return `<p class="hint">${schedule?'Belum ada jadwal.':'Belum ada data.'}</p>`;
-  if(schedule){let out=scheduleCardsV642(rows.slice().sort((a,b)=>(String(a.event_date)+String(a.start_time)).localeCompare(String(b.event_date)+String(b.start_time))),b,proposal,proposal?'Proposal':'Skripsi',actions);
+  if(schedule){let out=scheduleCardsV642(rows.slice().sort((a,z)=>(String(a.event_date)+String(a.start_time)).localeCompare(String(z.event_date)+String(z.start_time))),b,proposal,proposal?'Proposal':'Skripsi',actions);
    if(proposal){const ids=new Set(rows.map(r=>r.schedule_id));const reviews=(b.reviews||[]).filter(r=>ids.has(r.schedule_id));if(reviews.length)out+=table(reviews,[['reviewer_name','Dosen'],['review_note','Saran dan Masukan'],['student_feedback','Tanggapan Mahasiswa']]);}return out;
   }
-  if(kind==='guidance')return table(rows,[['guidance_date','Tanggal',guidanceDateV630],['topic','Topik'],['student_note','Catatan Mahasiswa'],['lecturer_feedback','Masukan Dosen']],r=>`<button class="btn secondary small" data-action="guidance-feedback" data-id="${attr(r.guidance_id)}">${r.lecturer_feedback?'Edit Masukan':'Tambah Masukan'}</button>`);
-  return table(rows,[['document_type','Jenis',v=>esc(DOCUMENT_LABEL[v]||v)],['file_name','File'],['uploaded_at','Waktu',dt],['similarity_percent','Similarity',v=>v===null||v===undefined||v===''?'-':esc(v)+'%'],['exam_stage','Tahap Ujian'],['document_id','Persetujuan',(_,r)=>documentReviewSummaryV636(r)],['file_url','Tautan',v=>v?`<a href="${attr(v)}" target="_blank" rel="noopener">Buka</a>`:'-']],r=>r.can_review?`<button class="btn primary small" data-action="document-review" data-id="${attr(r.document_id)}">${documentApprovalExistsV638(r)?'Ubah Persetujuan':'Beri Persetujuan'}</button>`:'');
+  if(kind==='guidance')return table(rows,[['guidance_date','Tanggal',guidanceDateV630],['topic','Topik'],['student_note','Catatan Mahasiswa'],['lecturer_feedback','Masukan Dosen']],role==='lecturer'?(r=>`<button class="btn secondary small" data-action="guidance-feedback" data-id="${attr(r.guidance_id)}">${r.lecturer_feedback?'Edit Masukan':'Tambah Masukan'}</button>`):null);
+  return table(rows,[['document_type','Jenis',v=>esc(DOCUMENT_LABEL[v]||v)],['file_name','File'],['uploaded_at','Waktu',dt],['similarity_percent','Similarity',v=>v===null||v===undefined||v===''?'-':esc(v)+'%'],['exam_stage','Tahap Ujian'],['document_id','Persetujuan',(_,r)=>documentReviewSummaryV636(r)],['file_url','Tautan',v=>v?`<a href="${attr(v)}" target="_blank" rel="noopener">Buka</a>`:'-']],role==='lecturer'?(r=>r.can_review?`<button class="btn primary small" data-action="document-review" data-id="${attr(r.document_id)}">${documentApprovalExistsV638(r)?'Ubah Persetujuan':'Beri Persetujuan'}</button>`:''):null);
  }
- $('content').innerHTML=`<div class="filterbar mentee-search"><div class="field"><label for="menteeSearch661">Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(q)}" placeholder="Nama, NIM, judul, catatan..."></div></div>`+groups.map(g=>`<section data-mentee-group><h3>${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card><header class="mentee-identity"><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.is_mentee?'':' · Sebagai pembahas/penguji'}</span></header>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
- const filter=()=>{const query=$('menteeSearch661').value.toLowerCase().trim();S.cache.menteeSearch661={...(S.cache.menteeSearch661||{}),[kind]:query};document.querySelectorAll('[data-mentee-card]').forEach(el=>el.hidden=!el.textContent.toLowerCase().includes(query));document.querySelectorAll('[data-mentee-group]').forEach(el=>el.hidden=![...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.hidden));};
- $('menteeSearch661').oninput=filter;filter();restoreDetailStatesV632($('content'));
- if(kind==='documents')startDocumentsRealtimeV620();
+ const topAction=schedule&&b.canManage?'<div class="sectionhead"><span></span><button class="btn primary" data-action="schedule-add">+ Tambah Jadwal</button></div>':kind==='documents'&&role==='admin'&&b.theses?.length?'<div class="sectionhead"><span></span><button class="btn primary" data-action="show-document-form">+ Upload Dokumen</button></div>':'';
+ const filterBar=`<div class="filterbar mentee-filterbar"><div class="field"><label for="menteeSearch661">Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(saved.q||'')}" placeholder="Nama, NIM, judul, catatan, dosen..."></div><div class="field"><label>Tahun Akademik</label><select id="menteeYear661"><option value="">Semua Tahun</option>${years.map(v=>`<option value="${attr(v)}" ${String(saved.year||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="menteeSemester661"><option value="">Semua Semester</option>${semesters.map(v=>`<option value="${attr(v)}" ${String(saved.semester||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Program Studi</label><select id="menteeProgram661"><option value="">Semua Prodi</option>${programs.map(v=>`<option value="${attr(v)}" ${String(saved.program||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Status Data</label><select id="menteeData661"><option value="">Semua</option><option value="with" ${saved.data==='with'?'selected':''}>Ada Data</option><option value="without" ${saved.data==='without'?'selected':''}>Belum Ada Data</option></select></div><span id="menteeCount661" class="mentee-filter-count"></span></div>`;
+ let html=topAction+filterBar+groups.map(g=>`<section data-mentee-group data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}"><h3 class="mentee-period-title">${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}" data-program="${attr(s.program_name||'')}" data-has-data="${s.data.length?'with':'without'}"><header class="mentee-identity"><span class="mentee-seq" data-mentee-number></span><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.class_name?` · ${esc(s.class_name)}`:''}${role==='lecturer'&&!s.is_mentee?' · Sebagai pembahas/penguji':''}</span></header>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
+ if(kind==='documents'&&role==='admin'&&b.theses?.length)html+=documentUploadFormHtmlV662(b,role);
+ $('content').innerHTML=html;
+ const filter=()=>{const query=String($('menteeSearch661')?.value||'').toLowerCase().trim(),year=val('menteeYear661'),semester=val('menteeSemester661'),program=val('menteeProgram661'),data=val('menteeData661');S.cache.menteeFilters661={...(S.cache.menteeFilters661||{}),[kind]:{q:query,year,semester,program,data}};let n=0;document.querySelectorAll('[data-mentee-card]').forEach(el=>{const ok=(!query||el.textContent.toLowerCase().includes(query))&&(!year||el.dataset.year===year)&&(!semester||el.dataset.semester===semester)&&(!program||el.dataset.program===program)&&(!data||el.dataset.hasData===data);el.hidden=!ok;if(ok){n++;const no=el.querySelector('[data-mentee-number]');if(no)no.textContent=n+'.';}});document.querySelectorAll('[data-mentee-group]').forEach(el=>el.hidden=![...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.hidden));if($('menteeCount661'))$('menteeCount661').textContent=n+' kartu ditampilkan';};
+ $('menteeSearch661').oninput=filter;['menteeYear661','menteeSemester661','menteeProgram661','menteeData661'].forEach(id=>{if($(id))$(id).onchange=filter});filter();restoreDetailStatesV632($('content'));
+ if(kind==='documents'){startDocumentsRealtimeV620();syncDocumentThesisInfoV635();}
 }
 function renderAdminTab(tab,data){
  renderAdminTabBase661(tab,data);
@@ -1187,7 +1206,7 @@ async function confirmSupervisorResponseV630(){
 }
 async function directAssign(){const st=val('assignStudent'),l=val('assignLecturer');if(!st||!l)return toast('Pilih mahasiswa dan dosen.',true);busy(true);try{const result=await api('directAssignSupervisor',st,l,val('assignNote'));applySupervisorMutationV622(result);toast('Pembimbing berhasil ditetapkan.')}catch(e){toast(e.message,true)}finally{busy(false)}}
 function renderGuidance(b){
- if(S.boot.user.role_id==='lecturer'&&b.menteeRoster)return renderMentee661('guidance',b);
+ if(['lecturer','admin'].includes(S.boot.user.role_id)&&b.menteeRoster)return renderMentee661('guidance',b);
  const rows=(b.guidance||[]).slice().sort((a,z)=>String(z.guidance_date||z.created_at||'').localeCompare(String(a.guidance_date||a.created_at||''))),th=b.theses||[],role=S.boot.user.role_id;S.cache.theses=th;S.cache.guidance=rows;let h='';
  const canAdd=role==='student'&&th.length;h+=periodNoteHtml(b.period);
  h+=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Bimbingan</h3><p>${role==='lecturer'?'Tambahkan masukan pada catatan yang telah dikirim mahasiswa.':'Masukan dosen akan muncul pada baris catatan yang sama.'}</p></div>${canAdd?'<button class="btn primary" data-action="show-guidance-form">+ Tambah Bimbingan</button>':''}</div>${table(rows,[['guidance_date','Tanggal',guidanceDateV630],['student_name','Mahasiswa'],['topic','Topik'],['student_note','Catatan Mahasiswa'],['lecturer_feedback','Masukan Dosen']],role==='lecturer'?(r=>`<button class="btn secondary small" data-action="guidance-feedback" data-id="${attr(r.guidance_id)}">${r.lecturer_feedback?'Edit Masukan':'Tambah Masukan'}</button>`):role==='student'?(r=>!String(r.lecturer_feedback||'').trim()?`<button class="btn danger small" data-action="delete-my-guidance" data-id="${attr(r.guidance_id)}">Hapus</button>`:''):null)}</section>`;
@@ -1208,13 +1227,17 @@ function periodDateTimeV624(value){
  return `${match[3]} ${months[Number(match[2])-1]||match[2]} ${match[1]} ${match[4]||'00'}:${match[5]||'00'}:${match[6]||'00'} WIB`;
 }
 function periodNoteHtml(period){if(!period||(!period.start&&!period.end&&period.open))return'';const range=[period.start?periodDateTimeV624(period.start):'',period.end?periodDateTimeV624(period.end):''].filter(Boolean).join(' – ');return `<div class="period-note"><b>${esc(period.label||'Periode')}</b>: ${range?esc(range):'tidak dibatasi'} · <span class="badge ${period.open?'ACTIVE':'REJECTED'}">${period.open?'Dibuka':'Ditutup'}</span>${period.message?`<br>${esc(period.message)}`:''}</div>`}
+function documentUploadFormHtmlV662(b,role){
+ const th=b.theses||[],periods=(b.periods||[]).filter(p=>['GUIDANCE','PROPOSAL_SUBMISSION','THESIS_SUBMISSION','FINAL_THESIS_SUBMISSION'].includes(p.key));
+ return `<div id="documentNewForm" class="card" style="${S.cache.documentFormOpen?'display:block':'display:none'};margin-top:18px"><div class="sectionhead"><div><h3>Upload Dokumen</h3><p>${role==='admin'?'Admin dapat memilih mahasiswa yang dokumennya akan disimpan.':'Dokumen akan disimpan untuk data mahasiswa Anda.'}</p></div><button class="btn ghost" data-action="hide-inline-form" data-target="documentNewForm">Tutup Form</button></div>${periods.map(periodNoteHtml).join('')}<div class="formgrid"><div class="field"><label>Mahasiswa</label><select id="dStudent">${th.map(x=>`<option value="${attr(x.student_id)}" data-title="${attr(x.title||'')}" data-field="${attr(x.field_name||'')}" data-course="${attr(x.course_name||'')}">${esc(x.student_name||x.student_id)}</option>`).join('')}</select></div><div class="field"><label>Jenis dokumen</label><select id="dType"><option value="PROPOSAL">Proposal Skripsi</option><option value="GUIDANCE_PROOF">Bukti Bimbingan</option><option value="APPROVAL_PROOF">Bukti Pengesahan</option><option value="ORIGINALITY_REPORT">Lembar Hasil Uji Tingkat Orisinalitas (Turnitin/iThenticate)</option><option value="EXAM_THESIS">Dokumen Skripsi untuk Ujian</option><option value="FINAL_THESIS">Skripsi Final</option><option value="OTHER">Lampiran</option></select></div><div id="dSimilarityField" class="field span2" style="display:none"><label>Persentase Hasil Uji Orisinalitas / Similarity (%) <span class="req">*</span></label><input id="dSimilarity" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0–100, maksimal 2 desimal"></div><div class="field span2"><label>Data Skripsi</label><div id="dThesisInfo" class="subtlebox"></div></div><div class="field span2"><label class="togglecard"><span class="togglecopy"><b>Ada revisi data skripsi</b><small>Aktifkan jika judul, bidang, atau mata kuliah berubah.</small></span><span class="switch"><input id="dHasRevision" type="checkbox"><span class="slider"></span></span></label></div><div id="dRevisionFields" class="field span2" style="display:none"><div class="formgrid"><div class="field span2"><label>Judul Revisi <span class="req">*</span></label><textarea id="dRevisedTitle"></textarea></div><div class="field"><label>Bidang Revisi <span class="req">*</span></label><input id="dRevisedField"></div><div class="field"><label>Mata Kuliah Skripsi Revisi <span class="req">*</span></label><input id="dRevisedCourse"></div></div></div><div class="field span2"><label>File</label><input id="dFile" type="file"></div></div><button class="btn primary" data-action="upload-document">Upload Dokumen</button></div>`;
+}
 function renderDocuments(b){
- if(S.boot.user.role_id==='lecturer'&&b.menteeRoster)return renderMentee661('documents',b);
+ if(['lecturer','admin'].includes(S.boot.user.role_id)&&b.menteeRoster)return renderMentee661('documents',b);
  b=b||{};S.cache.documentBundleV620=b;if(b.document_revision)S.cache.documentRevisionV620=String(b.document_revision);
  const rows=(b.documents||[]).slice().sort((a,z)=>String(z.uploaded_at||'').localeCompare(String(a.uploaded_at||''))).map(r=>Object.assign({},r,{document_label:DOCUMENT_LABEL[String(r.document_type||'').toUpperCase()]||r.document_type})),th=b.theses||[],role=S.boot.user.role_id,canAdd=['student','admin'].includes(role)&&th.length;
  const reviewAction=role==='lecturer'?(r=>r.can_review?`<button class="btn primary small" data-action="document-review" data-id="${attr(r.document_id)}">${documentApprovalExistsV638(r)?'Ubah Persetujuan':'Beri Persetujuan'}</button>`:''):null;
  let h=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Upload Dokumen</h3><p>Dokumen dapat dibuka oleh mahasiswa, pembimbing, pembahas seminar, dan tim penguji yang terkait.</p><span id="documentLiveStatus" class="live-sync">Data Sinkron</span></div>${canAdd?'<button class="btn primary" data-action="show-document-form">+ Upload Dokumen</button>':''}</div>${table(rows,[['document_label','Jenis'],['student_name','Mahasiswa'],['file_name','File'],['similarity_percent','Similarity',(v)=>v===null||v===undefined||v===''?'-':esc(Number(v).toFixed(2))+'%'],['uploaded_at','Waktu Upload',dt],['exam_stage','Hak Ujian',(v)=>v?esc(String(v).replace('_',' ')):'-'],['document_id','Persetujuan',(_,r)=>documentReviewSummaryV636(r)],['file_url','Tautan',(v)=>v?`<a href="${attr(v)}" target="_blank" rel="noopener">Buka</a>`:'-']],reviewAction)}</section>`;
- if(canAdd){const periods=(b.periods||[]).filter(p=>['GUIDANCE','PROPOSAL_SUBMISSION','THESIS_SUBMISSION','FINAL_THESIS_SUBMISSION'].includes(p.key));h+=`<div id="documentNewForm" class="card" style="${S.cache.documentFormOpen?'display:block':'display:none'};margin-top:18px"><div class="sectionhead"><div><h3>Upload Dokumen</h3><p>${role==='admin'?'Admin dapat memilih mahasiswa yang dokumennya akan disimpan.':'Dokumen akan disimpan untuk data mahasiswa Anda.'}</p></div><button class="btn ghost" data-action="hide-inline-form" data-target="documentNewForm">Tutup Form</button></div>${periods.map(periodNoteHtml).join('')}<div class="formgrid"><div class="field"><label>Mahasiswa</label><select id="dStudent">${th.map(x=>`<option value="${attr(x.student_id)}" data-title="${attr(x.title||'')}" data-field="${attr(x.field_name||'')}" data-course="${attr(x.course_name||'')}">${esc(x.student_name||x.student_id)}</option>`).join('')}</select></div><div class="field"><label>Jenis dokumen</label><select id="dType"><option value="PROPOSAL">Proposal Skripsi</option><option value="GUIDANCE_PROOF">Bukti Bimbingan</option><option value="APPROVAL_PROOF">Bukti Pengesahan</option><option value="ORIGINALITY_REPORT">Lembar Hasil Uji Tingkat Orisinalitas (Turnitin/iThenticate)</option><option value="EXAM_THESIS">Dokumen Skripsi untuk Ujian</option><option value="FINAL_THESIS">Skripsi Final</option><option value="OTHER">Lampiran</option></select></div><div id="dSimilarityField" class="field span2" style="display:none"><label>Persentase Hasil Uji Orisinalitas / Similarity (%) <span class="req">*</span></label><input id="dSimilarity" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0–100, maksimal 2 desimal"></div><div class="field span2"><label>Data Skripsi</label><div id="dThesisInfo" class="subtlebox"></div></div><div class="field span2"><label class="togglecard"><span class="togglecopy"><b>Ada revisi data skripsi</b><small>Aktifkan jika judul, bidang, atau mata kuliah berubah.</small></span><span class="switch"><input id="dHasRevision" type="checkbox"><span class="slider"></span></span></label></div><div id="dRevisionFields" class="field span2" style="display:none"><div class="formgrid"><div class="field span2"><label>Judul Revisi <span class="req">*</span></label><textarea id="dRevisedTitle"></textarea></div><div class="field"><label>Bidang Revisi <span class="req">*</span></label><input id="dRevisedField"></div><div class="field"><label>Mata Kuliah Skripsi Revisi <span class="req">*</span></label><input id="dRevisedCourse"></div></div></div><div class="field span2"><label>File</label><input id="dFile" type="file"></div></div><button class="btn primary" data-action="upload-document">Upload Dokumen</button></div>`}
+ if(canAdd)h+=documentUploadFormHtmlV662(b,role);
  $('content').innerHTML=h;startDocumentsRealtimeV620();
  syncDocumentThesisInfoV635();
 }
@@ -1257,7 +1280,7 @@ function openDocumentReviewV636(id){const r=(S.cache.documentBundleV620?.documen
 async function saveDocumentReviewV636(id){if(!val('drDecision')||!val('drNote'))return toast('Keputusan dan catatan wajib diisi.',true);const doc=(S.cache.documentBundleV620?.documents||[]).find(x=>String(x.document_id)===String(id));if(doc?.my_review_role==='SUPERVISOR'&&!val('drEligibility'))return toast('Kelayakan sidang wajib dipilih.',true);busy(true);try{const result=await api('reviewDocument',{document_id:id,decision:val('drDecision'),eligibility:val('drEligibility'),note:val('drNote')});closeModal();const next=Object.assign({},S.cache.documentBundleV620||{},{documents:result.documents||[]});S.cache.documentBundleV620=next;renderDocuments(next);toast('Persetujuan dan catatan berhasil disimpan.')}catch(e){toast(e.message,true)}finally{busy(false)}}
 
 function renderAcademicSchedule(b,eventType){
- if(S.boot.user.role_id==='lecturer'&&b.menteeRoster)return renderMentee661(eventType,b);
+ if(['lecturer','admin'].includes(S.boot.user.role_id)&&b.menteeRoster)return renderMentee661(eventType,b);
  const isProposal=eventType==='PROPOSAL_SEMINAR',allRows=b.rows||[];S.cache.scheduleBundle=b;S.cache.scheduleType=eventType;S.cache.schedulePeriodV632=S.cache.schedulePeriodV632||{};
  const options=b.periodOptions||{},saved=S.cache.schedulePeriodV632[eventType]||{},defaults=b.selectedPeriod||{};
  const selectedYear=saved.academicYear!==undefined?saved.academicYear:(defaults.academicYear||''),selectedSemester=saved.semester!==undefined?saved.semester:(defaults.semester||'');
