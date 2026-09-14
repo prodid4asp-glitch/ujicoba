@@ -111,16 +111,19 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
  [data-mentee-card] .schedule-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* v6.62: kartu mahasiswa lebih terbaca + filter admin. */
-.mentee-filterbar{grid-template-columns:minmax(220px,2fr) repeat(4,minmax(135px,1fr)) auto}
+/* v6.64: kartu mahasiswa, pencarian live stabil, dan rendering lebih ringan. */
+.mentee-filterbar{grid-template-columns:minmax(300px,1fr) repeat(4,160px) 132px;gap:8px;align-items:end}
+.mentee-filterbar>.field{min-width:0;margin:0}.mentee-filterbar input,.mentee-filterbar select{width:100%;height:36px;min-height:36px;box-sizing:border-box}.mentee-filterbar input[type=search]{min-width:0}
 .mentee-period-title{font-size:15px!important;line-height:1.35!important;font-weight:700!important;margin:13px 0 7px!important;color:var(--brand)!important}
 .mentee-identity{display:grid!important;grid-template-columns:30px minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:baseline!important;margin-bottom:6px!important}
 .mentee-seq{grid-row:1 / span 2;align-self:start;display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 5px;border:1px solid var(--line);background:#f8fafc;color:#475467;font-size:11px;font-weight:700;border-radius:3px}
 .mentee-identity h4{grid-column:2;font-size:13.5px!important;line-height:1.35!important;margin:0!important;font-weight:400!important;overflow-wrap:anywhere}
 .mentee-identity .hint{grid-column:2;font-size:11.5px!important;line-height:1.35!important;margin:0!important}
 .mentee-card-meta{font-size:11px;color:var(--muted);margin-left:4px}
-.mentee-filter-count{display:inline-flex;align-items:center;min-height:32px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
-@media(max-width:1050px){.mentee-filterbar{grid-template-columns:repeat(3,minmax(0,1fr))}.mentee-filterbar>.field:first-child{grid-column:1/-1}}
+.mentee-filter-count{display:inline-flex;align-items:center;justify-content:flex-start;width:132px;min-width:132px;height:36px;min-height:36px;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+[data-mentee-card]{content-visibility:auto;contain-intrinsic-size:68px}
+[data-mentee-card].filter-hidden,[data-mentee-group].filter-hidden,[data-mentee-card][hidden],[data-mentee-group][hidden]{display:none!important}
+@media(max-width:1220px){.mentee-filterbar{grid-template-columns:minmax(260px,1fr) repeat(2,minmax(145px,1fr))}.mentee-filterbar>.field:first-child{grid-column:1/-1}.mentee-filter-count{width:auto;min-width:0}}
 @media(max-width:760px){.mentee-filterbar{grid-template-columns:1fr 1fr}.mentee-filterbar>.field:first-child,.mentee-filterbar>.mentee-filter-count{grid-column:1/-1}.mentee-period-title{font-size:14px!important}}
 
 /* v6.63: pencarian live yang konsisten + konfigurasi per semester/tahun akademik. */
@@ -140,7 +143,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.63.1'
+  VERSION:'6.64.0'
 });
 
 (function(){
@@ -227,7 +230,7 @@ window.PORTAL_CONFIG=Object.freeze({
     return csvSnapshot;
   }
   window.PortalBridge={request:request,refreshCsv:refreshCsv,getCsvSnapshot:function(){return csvSnapshot;},getApiUrl:apiUrl};
-  setTimeout(function(){refreshCsv();},0);
+  // CSV tidak dibaca otomatis; portal utama memakai Supabase sehingga startup lebih ringan.
 })();
 </script>
 <div id="startupCover" class="startup-cover" role="status" aria-live="polite"><div class="startup-box"><div class="startup-mark">TA</div><p>Memulihkan portal…</p></div></div>
@@ -254,7 +257,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.63.1</div>
+      <div class="hint" style="margin-top:16px">Versi 6.64.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -436,7 +439,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.63.1</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.64.0</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -482,6 +485,7 @@ function clearSession(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableS
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function searchTextV663(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function searchMatchesV663(haystack,query){const q=searchTextV663(query);if(!q)return true;const hay=searchTextV663(haystack),tokens=q.split(/\s+/).filter(Boolean);return tokens.every(token=>hay.includes(token))}
+function menteeSearchCorpusV640(student,rows){const keys=['topic','student_note','lecturer_feedback','file_name','document_type','title','revised_title','student_name','supervisor_name','reviewer1_name','reviewer2_name','review_note','student_feedback','room','event_date','status','stage','exam_stage'];const parts=[student?.student_name,student?.student_id,student?.program_name,student?.class_name];for(const r of (rows||[])){for(const k of keys){const v=r?.[k];if(v!==null&&v!==undefined&&v!=='')parts.push(String(v))}}return searchTextV663(parts.join(' '))}
 function errorTextV635(value,fallback='Permintaan gagal.'){if(value instanceof Error)return value.message||fallback;if(typeof value==='string')return value||fallback;if(value&&typeof value==='object'){for(const key of ['message','details','hint','error_description','error']){const item=value[key];if(typeof item==='string'&&item.trim())return item.trim()}try{return JSON.stringify(value)}catch(e){}}return fallback}
 function attr(v){return esc(v)}function val(id){return ($(id)?.value||'').trim()}function truth(v){return v===true||['true','1','yes'].includes(String(v).toLowerCase())}
 function date(v){if(!v)return'-';let d=new Date(String(v).length===10?v+'T00:00:00':v);return isNaN(d)?esc(v):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
@@ -674,7 +678,6 @@ async function loadPage(page,force=false){
 window.__portalLoadPageV52=loadPage;
 async function refreshCurrentV52(){
   S.prefetchGeneration=(S.prefetchGeneration||0)+1;
-  if(window.PortalBridge?.refreshCsv)window.PortalBridge.refreshCsv().catch(()=>{});
   if(S.page==='admin')await loadAdminTab(S.adminTab,true);else await loadPage(S.page,true);
   schedulePrefetchV52();
 }
@@ -751,11 +754,12 @@ function renderMentee661(kind,b){
  }
  const topAction=schedule&&b.canManage?'<div class="sectionhead"><span></span><button class="btn primary" data-action="schedule-add">+ Tambah Jadwal</button></div>':kind==='documents'&&role==='admin'&&b.theses?.length?'<div class="sectionhead"><span></span><button class="btn primary" data-action="show-document-form">+ Upload Dokumen</button></div>':'';
  const filterBar=`<div class="filterbar mentee-filterbar"><div class="field"><label for="menteeSearch661">Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(saved.q||'')}" placeholder="Nama, NIM, judul, catatan, dosen..."></div><div class="field"><label>Tahun Akademik</label><select id="menteeYear661"><option value="">Semua Tahun</option>${years.map(v=>`<option value="${attr(v)}" ${String(saved.year||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="menteeSemester661"><option value="">Semua Semester</option>${semesters.map(v=>`<option value="${attr(v)}" ${String(saved.semester||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Program Studi</label><select id="menteeProgram661"><option value="">Semua Prodi</option>${programs.map(v=>`<option value="${attr(v)}" ${String(saved.program||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Status Data</label><select id="menteeData661"><option value="">Semua</option><option value="with" ${saved.data==='with'?'selected':''}>Ada Data</option><option value="without" ${saved.data==='without'?'selected':''}>Belum Ada Data</option></select></div><span id="menteeCount661" class="mentee-filter-count"></span></div>`;
- let html=topAction+filterBar+groups.map(g=>`<section data-mentee-group data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}"><h3 class="mentee-period-title">${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}" data-program="${attr(s.program_name||'')}" data-has-data="${s.data.length?'with':'without'}" data-search="${attr(searchTextV663([s.student_name,s.student_id,s.program_name,s.class_name,JSON.stringify(s.data||[])].join(' ')))}"><header class="mentee-identity"><span class="mentee-seq" data-mentee-number></span><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.class_name?` · ${esc(s.class_name)}`:''}${role==='lecturer'&&!s.is_mentee?' · Sebagai pembahas/penguji':''}</span></header>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
+ let html=topAction+filterBar+groups.map(g=>`<section data-mentee-group data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}"><h3 class="mentee-period-title">${esc(g.label)}</h3>${g.students.map(s=>`<article class="card" data-mentee-card data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}" data-program="${attr(s.program_name||'')}" data-has-data="${s.data.length?'with':'without'}" data-search="${attr(menteeSearchCorpusV640(s,s.data))}"><header class="mentee-identity"><span class="mentee-seq" data-mentee-number></span><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.class_name?` · ${esc(s.class_name)}`:''}${role==='lecturer'&&!s.is_mentee?' · Sebagai pembahas/penguji':''}</span></header>${content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>');
  if(kind==='documents'&&role==='admin'&&b.theses?.length)html+=documentUploadFormHtmlV662(b,role);
  $('content').innerHTML=html;
- const filter=()=>{const query=String($('menteeSearch661')?.value||'').trim(),year=val('menteeYear661'),semester=val('menteeSemester661'),program=val('menteeProgram661'),data=val('menteeData661');S.cache.menteeFilters661={...(S.cache.menteeFilters661||{}),[kind]:{q:query,year,semester,program,data}};let n=0;document.querySelectorAll('[data-mentee-card]').forEach(el=>{const ok=searchMatchesV663(el.dataset.search||el.textContent,query)&&(!year||el.dataset.year===year)&&(!semester||el.dataset.semester===semester)&&(!program||el.dataset.program===program)&&(!data||el.dataset.hasData===data);el.hidden=!ok;if(ok){n++;const no=el.querySelector('[data-mentee-number]');if(no)no.textContent=n+'.';}});document.querySelectorAll('[data-mentee-group]').forEach(el=>el.hidden=![...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.hidden));if($('menteeCount661'))$('menteeCount661').textContent=n+' kartu ditampilkan';};
- const searchInput=$('menteeSearch661');if(searchInput){searchInput.addEventListener('input',filter);searchInput.addEventListener('search',filter);searchInput.addEventListener('keyup',filter)}['menteeYear661','menteeSemester661','menteeProgram661','menteeData661'].forEach(id=>{if($(id))$(id).addEventListener('change',filter)});filter();restoreDetailStatesV632($('content'));
+ const filter=()=>{const query=String($('menteeSearch661')?.value||'').trim(),year=val('menteeYear661'),semester=val('menteeSemester661'),program=val('menteeProgram661'),data=val('menteeData661');S.cache.menteeFilters661={...(S.cache.menteeFilters661||{}),[kind]:{q:query,year,semester,program,data}};let n=0;document.querySelectorAll('[data-mentee-card]').forEach(el=>{const ok=searchMatchesV663(el.dataset.search||'',query)&&(!year||el.dataset.year===year)&&(!semester||el.dataset.semester===semester)&&(!program||el.dataset.program===program)&&(!data||el.dataset.hasData===data);el.hidden=!ok;el.classList.toggle('filter-hidden',!ok);if(ok){n++;const no=el.querySelector('[data-mentee-number]');if(no)no.textContent=n+'.';}});document.querySelectorAll('[data-mentee-group]').forEach(el=>{const visible=[...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.classList.contains('filter-hidden'));el.hidden=!visible;el.classList.toggle('filter-hidden',!visible)});if($('menteeCount661'))$('menteeCount661').textContent=n+' kartu ditampilkan';};
+ let filterFrame=0;const queueFilter=()=>{if(filterFrame)cancelAnimationFrame(filterFrame);filterFrame=requestAnimationFrame(()=>{filterFrame=0;filter()})};
+ const searchInput=$('menteeSearch661');if(searchInput){searchInput.addEventListener('input',queueFilter,{passive:true});searchInput.addEventListener('search',queueFilter);searchInput.addEventListener('keyup',queueFilter,{passive:true})}['menteeYear661','menteeSemester661','menteeProgram661','menteeData661'].forEach(id=>{if($(id))$(id).addEventListener('change',queueFilter)});filter();restoreDetailStatesV632($('content'));
  if(kind==='documents'){startDocumentsRealtimeV620();syncDocumentThesisInfoV635();}
 }
 function renderAdminTab(tab,data){
@@ -1617,7 +1621,7 @@ function ensureSupabaseRealtimeV630(){
   .on('postgres_changes',{event:'*',schema:'public',table:'portal_config'},scheduleSupabaseRefreshV632).subscribe();
 }
 function scheduleSupabaseRefreshV632(){clearTimeout(supabaseRealtimeTimerV630);supabaseRealtimeTimerV630=setTimeout(()=>refreshCurrentV52().catch(()=>{}),280)}
-setInterval(ensureSupabaseRealtimeV630,1000);
+ensureSupabaseRealtimeV630();setInterval(ensureSupabaseRealtimeV630,5000);
 window.addEventListener('portal:csv',()=>{if(S.token&&S.page==='dashboard'&&S.workspace.pages?.dashboard?.dashboard)renderDashboard(S.workspace.pages.dashboard.dashboard)});
 window.addEventListener('error',e=>{console.error(e.error||e.message);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Terjadi kesalahan tampilan. Portal dikembalikan ke halaman login.');else toast('Terjadi kesalahan tampilan: '+(e.message||'unknown'),true)}catch(_){}});
 window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Koneksi portal gagal dipulihkan. Silakan login kembali.')}catch(_){}});
