@@ -51,7 +51,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.57.0'
+  VERSION:'6.60.0'
 });
 
 (function(){
@@ -585,7 +585,29 @@ async function refreshCurrentV52(){
 function detailStateKeyV632(el){const summary=el?.querySelector?.(':scope>summary');if(!summary)return'';const label=String(summary.textContent||'').replace(/Tampilkan|Sembunyikan/g,'').trim();const peers=Array.from(document.querySelectorAll('details')).filter(x=>String(x.querySelector(':scope>summary')?.textContent||'').replace(/Tampilkan|Sembunyikan/g,'').trim()===label);return (S.page||'')+'|'+label+'|'+Math.max(0,peers.indexOf(el));}
 function rememberDetailStateV632(el){const key=detailStateKeyV632(el);if(!key)return;S.cache.detailStatesV632=S.cache.detailStatesV632||{};S.cache.detailStatesV632[key]=!!el.open;}
 function restoreDetailStatesV632(root=document){const states=S.cache.detailStatesV632||{};(root.matches?.('details')?[root]:Array.from(root.querySelectorAll?.('details')||[])).forEach(el=>{const key=detailStateKeyV632(el);if(key&&Object.prototype.hasOwnProperty.call(states,key)&&el.open!==states[key])el.open=states[key];});}
-function renderPage(p,b){let result;if(p==='dashboard')result=renderDashboard(b.dashboard||{});else if(p==='supervisor')result=renderSupervisor(b);else if(p==='guidance')result=renderGuidance(b);else if(p==='documents')result=renderDocuments(b);else if(p==='proposal_seminar')result=renderAcademicSchedule(b,'PROPOSAL_SEMINAR');else if(p==='thesis_exam')result=renderAcademicSchedule(b,'THESIS_EXAM');else if(p==='letters')result=renderLetters(b);else if(p==='internship')result=renderInternship(b);else if(p==='profile')result=renderProfile(b.profile||{});const frontend=String(window.PORTAL_CONFIG?.VERSION||''),backend=String(S.boot?.app?.version||'');if(frontend&&backend&&frontend!==backend&&$('content'))$('content').insertAdjacentHTML('afterbegin',`<div class="alert error"><b>Versi frontend dan API berbeda.</b><br>Frontend v${esc(frontend)}, sedangkan Edge Function v${esc(backend)}. Deploy ulang Edge Function portal-api menggunakan index.ts versi terbaru.</div>`);return result}
+
+// Display all mapped names; never replace a revised name with the original IDs.
+function normalizeThesisLabels660(bundle){
+ const refs=bundle.reference||bundle.taxonomy||{},seen=new WeakSet();
+ const fm=new Map((refs.fields||bundle.letterContext?.fields||[]).map(x=>[String(x.field_id),x.field_name]));
+ const cm=new Map((refs.courses||[]).map(x=>[String(x.course_id),x.course_name]));
+ const split=v=>[...new Set((Array.isArray(v)?v:[v]).flatMap(x=>String(x??'').split(',')).map(x=>x.trim()).filter(Boolean))];
+ function walk(x){
+  if(!x||typeof x!=='object'||seen.has(x))return;seen.add(x);
+  if(Array.isArray(x)){x.forEach(walk);return;}
+  for(const [kind,map] of [['field',fm],['course',cm]]){
+   const ids=split(x[kind+'_id']||x[kind+'_ids']);
+   const revised=x['revised_'+kind+'_name'];
+   if(revised)x[kind+'_name']=revised;
+   else if(!x.has_revision&&ids.length&&ids.every(id=>map.has(id)))x[kind+'_name']=ids.map(id=>map.get(id)).join(', ');
+   else if(Array.isArray(x[kind+'_name']))x[kind+'_name']=x[kind+'_name'].join(', ');
+  }
+  Object.values(x).forEach(walk);
+ }
+ walk(bundle);return bundle;
+}
+
+function renderPage(p,b){b=normalizeThesisLabels660(b||{});let result;if(p==='dashboard')result=renderDashboard(b.dashboard||{});else if(p==='supervisor')result=renderSupervisor(b);else if(p==='guidance')result=renderGuidance(b);else if(p==='documents')result=renderDocuments(b);else if(p==='proposal_seminar')result=renderAcademicSchedule(b,'PROPOSAL_SEMINAR');else if(p==='thesis_exam')result=renderAcademicSchedule(b,'THESIS_EXAM');else if(p==='letters')result=renderLetters(b);else if(p==='internship')result=renderInternship(b);else if(p==='profile')result=renderProfile(b.profile||{});const frontend=String(window.PORTAL_CONFIG?.VERSION||''),backend=String(S.boot?.app?.version||'');if(frontend&&backend&&frontend!==backend&&$('content'))$('content').insertAdjacentHTML('afterbegin',`<div class="alert error"><b>Versi frontend dan API berbeda.</b><br>Frontend v${esc(frontend)}, sedangkan Edge Function v${esc(backend)}. Deploy ulang Edge Function portal-api menggunakan index.ts versi terbaru.</div>`);return result}
 function cards(rows=[]){return rows.length?`<div class="grid stats">${rows.map(x=>`<div class="card stat"><small>${esc(x.label)}</small><b>${esc(x.value)}</b></div>`).join('')}</div>`:''}
 function table(rows,cols,actions){if(!rows?.length)return'<div class="card empty">Belum ada data.</div>';return `<div class="tablewrap"><table class="table"><thead><tr>${cols.map(c=>`<th>${esc(c[1])}</th>`).join('')}${actions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map((r,i)=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](r[c[0]],r):esc(r[c[0]]??'-')}</td>`).join('')}${actions?`<td>${actions(r,i)}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
 function csvSourceCardV60(){return''}
@@ -1299,7 +1321,7 @@ function renderAdminTab(tab,data){
  const m=META[tab],rows=(data||[]).map(r=>Object.assign({},r));
  if(tab==='fields'){const idx=Object.fromEntries((S.adminRefs.courses||[]).map(x=>[String(x.course_id),x]));rows.forEach(r=>{const ids=String(r.course_ids||r.course_id||'').split(',').map(x=>x.trim()).filter(Boolean);r.course_names=ids.map(id=>idx[String(id)]?.course_name||id).join(', ')||'-'})}
  if(tab==='lecturers'){const idx=Object.fromEntries((S.adminRefs.courses||[]).map(x=>[String(x.course_id),x]));rows.forEach(r=>{const ids=splitSelectIds(r.specialization_course_ids||'');r.specialization_course_names=ids.map(id=>{const c=idx[String(id)];return c?`${c.course_code?c.course_code+' · ':''}${c.course_name||id}`:id}).join(', ')||'-'})}
- if(tab==='students'){const idx=Object.fromEntries((S.adminRefs.courses||[]).map(x=>[String(x.course_id),x]));rows.forEach(r=>{r.course_name=idx[String(r.course_id)]?.course_name||r.course_id||'-';r.thesis_status=statusLabel(r.thesis_status)})}
+ if(tab==='students'){const idx=Object.fromEntries((S.adminRefs.courses||[]).map(x=>[String(x.course_id),x]));rows.forEach(r=>{r.course_name=[...new Set(String(r.course_id||'').split(',').map(x=>x.trim()).filter(Boolean))].map(id=>idx[id]?.course_name||id).join(', ')||'-';r.thesis_status=statusLabel(r.thesis_status)})}
  $('adminPane').innerHTML=`<div class="sectionhead"><div><h3>${esc(tab)}</h3><p>Data dimuat hanya untuk tab ini agar portal tetap ringan.</p></div><div class="toolbar"><button class="btn secondary" data-action="admin-add" data-entity="${tab}">+ Tambah</button><button class="btn ghost" data-action="admin-export" data-entity="${tab}">Export</button></div></div>${table(rows,m.cols.map(c=>[c,COL_LABEL[c]||c]),(r,i)=>`<button class="btn secondary small" data-action="admin-edit" data-entity="${tab}" data-index="${i}">Edit</button>`)}`
 }
 function splitSelectIds(v){return String(v||'').split(',').map(x=>x.trim()).filter(Boolean)}
