@@ -176,6 +176,38 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .internship-office-filter{grid-template-columns:minmax(230px,2fr) repeat(2,minmax(150px,1fr)) auto}.internship-office-filter .filter-count{white-space:nowrap}.internship-summary-row{grid-template-columns:repeat(4,minmax(120px,1fr));margin-top:0!important}.internship-summary-row .card{padding:8px 10px}.internship-summary-row .stat b{font-size:17px}.internship-summary-row .stat small{font-size:10.8px}
 @media(max-width:1050px){.dashboard-menu-strip{display:flex;overflow-x:auto;padding-bottom:3px}.dashboard-menu-card{min-width:135px}.schedule-card-head.exam-head{grid-template-columns:repeat(3,minmax(0,1fr))}.schedule-card-head.exam-head>.schedule-meta:first-child{grid-column:1/-1}.internship-office-filter{grid-template-columns:1fr 1fr}.internship-office-filter>.field:first-child{grid-column:1/-1}}
 @media(max-width:760px){.dashboard-menu-strip{display:flex}.schedule-card-head.exam-head{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-card-head.exam-head>.schedule-meta:first-child{grid-column:1/-1}.internship-office-filter{grid-template-columns:1fr}.internship-office-filter>.field:first-child{grid-column:auto}}
+
+/* v6.68.1: tabel Pembimbing & Administrasi dibuat lebih ringan dan rapi. */
+.supervisor-monitoring-table .table{min-width:880px;table-layout:auto}
+.supervisor-monitoring-table .table th,
+.supervisor-monitoring-table .table td{padding:5px 7px;font-size:11px;line-height:1.32;vertical-align:top}
+.supervisor-monitoring-table .table th{font-weight:600;white-space:nowrap}
+.supervisor-monitoring-table .table td:nth-child(1),
+.supervisor-monitoring-table .table th:nth-child(1){width:42px;text-align:center}
+.supervisor-monitoring-table .table td:nth-last-child(-n+4),
+.supervisor-monitoring-table .table th:nth-last-child(-n+4){white-space:nowrap;text-align:center}
+.supervisor-monitoring-table .badge{font-size:11px;font-weight:400;padding:3px 6px;line-height:1.25}
+.supervisor-monitoring-table .supervisor-period-groups{display:grid;gap:5px;min-width:260px}
+.supervisor-monitoring-table .supervisor-period-group{padding:4px 6px;border:1px solid var(--line);background:#fafcfd}
+.supervisor-monitoring-table .supervisor-period-group small{display:block;margin:0 0 2px;font-size:11px;line-height:1.3;font-weight:500;color:#475467}
+.supervisor-monitoring-table .supervisor-period-group ul{margin:0;padding-left:16px}
+.supervisor-monitoring-table .supervisor-period-group li{margin:0 0 1px;font-size:11px;line-height:1.3;font-weight:400}
+.supervisor-monitor-filter{grid-template-columns:minmax(230px,1.6fr) repeat(4,minmax(120px,.8fr)) 105px;align-items:end}
+.supervisor-monitor-filter .field{min-width:0;margin:0}
+.supervisor-monitor-filter input,.supervisor-monitor-filter select{width:100%;min-width:0;height:32px;padding:5px 7px;font-size:11.5px}
+.supervisor-monitor-filter label{font-size:11px;margin-bottom:3px}
+.supervisor-monitor-filter .filter-count{min-height:32px;font-size:11px;justify-content:flex-end;white-space:nowrap}
+#adminPane .table th,#adminPane .table td{padding:5px 7px;font-size:11.25px;line-height:1.3;vertical-align:top}
+#adminPane .table th{font-weight:600;white-space:nowrap}
+#adminPane .table .badge{font-size:10.5px;padding:3px 6px}
+#adminPane .table .btn.small{padding:3px 6px;font-size:10.5px}
+#adminPane .tablewrap{border-radius:3px}
+#adminPane .filterbar{padding:7px 8px;gap:7px}
+#adminPane .filterbar label{font-size:11px;margin-bottom:3px}
+#adminPane .filterbar input,#adminPane .filterbar select{height:32px;min-height:32px;padding:5px 7px;font-size:11.5px}
+@media(max-width:1180px){.supervisor-monitor-filter{grid-template-columns:minmax(220px,1fr) repeat(2,minmax(130px,1fr))}.supervisor-monitor-filter>.field:first-child{grid-column:1/-1}.supervisor-monitor-filter .filter-count{justify-content:flex-start}}
+@media(max-width:760px){.supervisor-monitor-filter{grid-template-columns:1fr 1fr}.supervisor-monitor-filter>.field:first-child,.supervisor-monitor-filter .filter-count{grid-column:1/-1}}
+
 </style>
 </head>
 <body>
@@ -189,7 +221,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.68.0'
+  VERSION:'6.68.1'
 });
 
 (function(){
@@ -303,7 +335,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.68.0</div>
+      <div class="hint" style="margin-top:16px">Versi 6.68.1</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -485,7 +517,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.68.0</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.68.1</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -1160,6 +1192,36 @@ function supervisorMenteeGroupsV668(students){
  return [...groups.values()].sort((a,b)=>a.label.localeCompare(b.label,'id')).map(g=>({...g,students:g.students.sort((a,b)=>String(a.student_name||'').localeCompare(String(b.student_name||''),'id'))}));
 }
 function supervisorMenteeCellV668(rows){const groups=supervisorMenteeGroupsV668(rows);if(!groups.length)return'Belum ada mahasiswa';return `<div class="supervisor-period-groups">${groups.map(g=>`<div class="supervisor-period-group"><small>${esc(g.label)}</small><ul>${g.students.map(s=>`<li>${esc(s.student_name||s.name||s.student_id)}${s.student_id?` <span class="muted">· ${esc(s.student_id)}</span>`:''}</li>`).join('')}</ul></div>`).join('')}</div>`}
+
+function supervisorLecturerMonitoringTableV681(rows){
+ const numbered=(rows||[]).map((r,i)=>Object.assign({},r,{row_no:i+1}));
+ return table(numbered,[['row_no','No.'],['lecturer_name','Dosen'],['students','Mahasiswa Bimbingan',(_,r)=>supervisorMenteeCellV668(r.students||[])],['current_load','Jumlah Bimbingan'],['quota','Kuota'],['remaining_quota','Sisa'],['capacity_status','Status',statusBadge]]);
+}
+function supervisorLecturerFilterOptionsV681(rows){
+ const programs=[...new Set((rows||[]).map(r=>String(r.program_name||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
+ const periods=[];(rows||[]).forEach(r=>(r.students||[]).forEach(s=>supervisorStudentPeriodsV668(s).forEach(p=>periods.push(p))));
+ const years=[...new Set(periods.map(p=>p.academic_year).filter(Boolean))].sort().reverse();
+ const semesters=[...new Set(periods.map(p=>p.semester).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
+ return {programs,years,semesters};
+}
+function supervisorLecturerMonitoringSectionV681(monitoring){
+ const rows=monitoring?.rows||[],summary=monitoring?.summary||{},opts=supervisorLecturerFilterOptionsV681(rows);
+ return `<details class="monitor-block"><summary><span>Monitoring Dosen Pembimbing Skripsi</span></summary><div class="monitor-body"><p class="hint">Daftar mahasiswa bimbingan aktif, pemakaian kuota, sisa kuota, dan status kapasitas setiap dosen.</p><div class="grid stats monitoring-stats"><div class="card stat"><small>Total dosen aktif</small><b>${esc(summary.lecturers||0)}</b></div><div class="card stat"><small>Mahasiswa bimbingan</small><b>${esc(summary.students||0)}</b></div><div class="card stat"><small>Kuota penuh</small><b>${esc(summary.full||0)}</b></div><div class="card stat"><small>Belum ada bimbingan</small><b>${esc(summary.empty||0)}</b></div></div><div class="filterbar supervisor-monitor-filter"><div class="field"><label>Cari dosen / mahasiswa</label><input id="slmSearch681" type="search" placeholder="Nama dosen, mahasiswa, NIM, periode..."></div><div class="field"><label>Program Studi</label><select id="slmProgram681"><option value="ALL">Semua Prodi</option>${opts.programs.map(v=>`<option value="${attr(v)}">${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="slmStatus681"><option value="ALL">Semua Status</option><option value="AVAILABLE">Belum Penuh</option><option value="FULL">Penuh</option><option value="EMPTY">Belum Ada Bimbingan</option></select></div><div class="field"><label>Tahun Akademik</label><select id="slmYear681"><option value="ALL">Semua Tahun</option>${opts.years.map(v=>`<option value="${attr(v)}">${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="slmSemester681"><option value="ALL">Semua Semester</option>${opts.semesters.map(v=>`<option value="${attr(v)}">${esc(v)}</option>`).join('')}</select></div><span id="slmCount681" class="filter-count">${rows.length} dosen</span></div><div id="supervisorLecturerMonitoring681" class="monitor-table-scroll supervisor-monitoring-table">${supervisorLecturerMonitoringTableV681(rows)}</div></div></details>`;
+}
+function applySupervisorLecturerFiltersV681(){
+ const all=S.cache.supervisor?.supervisorMonitoring?.rows||[],q=searchKeyV617(val('slmSearch681')),program=val('slmProgram681')||'ALL',status=val('slmStatus681')||'ALL',year=val('slmYear681')||'ALL',semester=val('slmSemester681')||'ALL';
+ const rows=all.filter(r=>{
+   const studentPeriods=(r.students||[]).flatMap(s=>supervisorStudentPeriodsV668(s));
+   const periodMatch=(year==='ALL'&&semester==='ALL')||studentPeriods.some(p=>(year==='ALL'||p.academic_year===year)&&(semester==='ALL'||p.semester===semester));
+   const hay=searchKeyV617([r.lecturer_name,r.name,r.lecturer_id,r.program_name,r.expertise,r.student_names,...(r.students||[]).flatMap(s=>[s.student_name,s.name,s.student_id,s.title,...supervisorStudentPeriodsV668(s).map(p=>`${p.semester} ${p.academic_year}`)])].join(' '));
+   return (!q||hay.includes(q))&&(program==='ALL'||String(r.program_name||'')===program)&&(status==='ALL'||String(r.capacity_status||'')===status)&&periodMatch;
+ });
+ const target=$('supervisorLecturerMonitoring681');if(target)target.innerHTML=supervisorLecturerMonitoringTableV681(rows);
+ if($('slmCount681'))$('slmCount681').textContent=rows.length+' dari '+all.length+' dosen';
+}
+function bindSupervisorLecturerFiltersV681(){
+ ['slmSearch681','slmProgram681','slmStatus681','slmYear681','slmSemester681'].forEach(id=>{const el=$(id);if(!el)return;el.addEventListener(id==='slmSearch681'?'input':'change',applySupervisorLecturerFiltersV681)});
+}
 function renderSupervisor(b){
  b=b||{};const role=S.boot.user.role_id,req=(b.requests||[]).slice().sort((a,z)=>String(a.submitted_at||'9999-12-31').localeCompare(String(z.submitted_at||'9999-12-31'))).map((r,i)=>Object.assign({queue_no:i+1},r)),ref=b.reference||{};b.requests=req;S.cache.supervisor=b;if(b.supervisor_revision)S.cache.supervisorRevisionV621=String(b.supervisor_revision);let h='';
  if(role==='student'){
@@ -1173,9 +1235,8 @@ function renderSupervisor(b){
    }
  }
  if(['admin','monitor'].includes(role)){
-   const monitoring=b.supervisorMonitoring||{},summary=monitoring.summary||{},lecturers=monitoring.rows||[];
-   const numberedLecturers=lecturers.map((r,i)=>Object.assign({},r,{row_no:i+1}));
-   h+=`<details class="monitor-block"><summary><span>Monitoring Dosen Pembimbing Skripsi</span></summary><div class="monitor-body"><p class="hint">Daftar mahasiswa bimbingan aktif, pemakaian kuota, sisa kuota, dan status kapasitas setiap dosen.</p><div class="grid stats monitoring-stats"><div class="card stat"><small>Total dosen aktif</small><b>${esc(summary.lecturers||0)}</b></div><div class="card stat"><small>Mahasiswa bimbingan</small><b>${esc(summary.students||0)}</b></div><div class="card stat"><small>Kuota penuh</small><b>${esc(summary.full||0)}</b></div><div class="card stat"><small>Belum ada bimbingan</small><b>${esc(summary.empty||0)}</b></div></div><div class="monitor-table-scroll">${table(numberedLecturers,[['row_no','No.'],['lecturer_name','Dosen'],['students','Mahasiswa Bimbingan',(_,r)=>supervisorMenteeCellV668(r.students||[])],['current_load','Jumlah Bimbingan'],['quota','Kuota'],['remaining_quota','Sisa'],['capacity_status','Status',statusBadge]])}</div></div></details>`;
+   const monitoring=b.supervisorMonitoring||{};
+   h+=supervisorLecturerMonitoringSectionV681(monitoring);
    h+=supervisorApplicationMonitoringSectionV617(b.supervisorApplicationMonitoring||{});
  }
  if(['admin','student'].includes(role))h+=lecturerAvailabilitySectionV630(b.lecturerAvailability||{});
@@ -1187,7 +1248,7 @@ function renderSupervisor(b){
    h+=`<div class="card"><div class="sectionhead"><div><h3>Kapasitas Bimbingan</h3><p>Ringkasan mahasiswa yang sudah menjadi bimbingan Anda dan kuota yang masih tersedia.</p></div></div><div class="grid stats"><div class="card stat"><small>Mahasiswa bimbingan aktif</small><b>${esc(used)}</b></div><div class="card stat"><small>Total kuota</small><b>${esc(quota)}</b></div><div class="card stat"><small>Sisa kuota</small><b>${esc(remaining)}</b></div></div><div class="scorebar" style="margin-top:14px"><i style="width:${pct}%"></i></div><div class="hint" style="margin-top:7px">Terpakai ${esc(used)} dari ${esc(quota)} kuota (${esc(pct)}%).</div></div>`;
  }
  const liveStatus=['student','lecturer','admin','monitor'].includes(role)?'<span id="supervisorLiveStatus" class="live-sync">Data Sinkron</span>':'';
- const historyHtml=`<details class="monitor-block"${['student','lecturer'].includes(role)?' open':''}><summary><span>Riwayat & Pengajuan Pembimbing</span></summary><div class="monitor-body"><p class="hint">Diurutkan dari waktu pengajuan paling awal agar urutan antrean mahasiswa terlihat jelas.</p>${liveStatus}<div class="monitor-table-scroll">${table(req,[['queue_no','No.'],['submitted_at','Waktu Pengajuan',dt],['student_name','Mahasiswa'],['field_name','Bidang'],['course_name','Mata Kuliah'],['title','Rencana Judul'],['lecturer_name','Dosen'],['status','Status',statusBadge]],supervisorRequestActionV621(role))}</div></div></details>`;h=role==='student'?historyHtml+h:h+historyHtml;$('content').innerHTML=h;startSupervisorRealtimeV621();
+ const historyHtml=`<details class="monitor-block"${['student','lecturer'].includes(role)?' open':''}><summary><span>Riwayat & Pengajuan Pembimbing</span></summary><div class="monitor-body"><p class="hint">Diurutkan dari waktu pengajuan paling awal agar urutan antrean mahasiswa terlihat jelas.</p>${liveStatus}<div class="monitor-table-scroll">${table(req,[['queue_no','No.'],['submitted_at','Waktu Pengajuan',dt],['student_name','Mahasiswa'],['field_name','Bidang'],['course_name','Mata Kuliah'],['title','Rencana Judul'],['lecturer_name','Dosen'],['status','Status',statusBadge]],supervisorRequestActionV621(role))}</div></div></details>`;h=role==='student'?historyHtml+h:h+historyHtml;$('content').innerHTML=h;bindSupervisorLecturerFiltersV681();startSupervisorRealtimeV621();
 }
 
 const SUPERVISOR_REALTIME_INTERVAL_V621=60000;
