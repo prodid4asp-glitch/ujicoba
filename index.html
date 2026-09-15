@@ -208,6 +208,52 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 @media(max-width:1180px){.supervisor-monitor-filter{grid-template-columns:minmax(220px,1fr) repeat(2,minmax(130px,1fr))}.supervisor-monitor-filter>.field:first-child{grid-column:1/-1}.supervisor-monitor-filter .filter-count{justify-content:flex-start}}
 @media(max-width:760px){.supervisor-monitor-filter{grid-template-columns:1fr 1fr}.supervisor-monitor-filter>.field:first-child,.supervisor-monitor-filter .filter-count{grid-column:1/-1}}
 
+
+/* v6.68.3: tata letak tabel administrasi dan striping global. */
+.table > tbody > tr:nth-child(odd) > td{background-color:#ffffff!important}
+.table > tbody > tr:nth-child(even) > td{background-color:#f5f7fa!important}
+.table > tbody > tr:hover > td{background-color:#edf5f7!important}
+
+/* Mata Kuliah: ID/kode selalu satu baris. */
+#adminPane[data-admin-entity="courses"] .table{min-width:980px;table-layout:auto}
+#adminPane[data-admin-entity="courses"] [data-col="course_id"],
+#adminPane[data-admin-entity="courses"] [data-col="course_code"]{
+  white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;
+}
+#adminPane[data-admin-entity="courses"] [data-col="course_id"]{min-width:132px}
+#adminPane[data-admin-entity="courses"] [data-col="course_code"]{min-width:112px}
+
+/* Bidang dan Unit Magang: identifier tidak boleh turun ke baris kedua. */
+#adminPane[data-admin-entity="fields"] [data-col="field_id"],
+#adminPane[data-admin-entity="internship_units"] [data-col="unit_id"]{
+  white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;
+}
+#adminPane[data-admin-entity="fields"] [data-col="field_id"]{min-width:145px}
+#adminPane[data-admin-entity="internship_units"] [data-col="unit_id"]{min-width:155px}
+
+/* Mahasiswa: email boleh wrap pada lebar sekitar NIM; judul skripsi diberi ruang lebih luas. */
+#adminPane[data-admin-entity="students"] .table{min-width:1580px;table-layout:auto}
+#adminPane[data-admin-entity="students"] [data-col="student_id"]{
+  width:124px;min-width:124px;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;
+}
+#adminPane[data-admin-entity="students"] [data-col="email"]{
+  width:128px;min-width:128px;max-width:128px;
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important;
+  overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.2;
+}
+#adminPane[data-admin-entity="students"] [data-col="thesis_title"]{
+  width:560px;min-width:560px;max-width:720px;white-space:normal!important;
+  overflow-wrap:break-word;word-break:normal;line-height:1.25;
+}
+#adminPane[data-admin-entity="students"] [data-col="name"]{min-width:180px}
+#adminPane[data-admin-entity="students"] [data-col="program_name"]{min-width:160px}
+#adminPane[data-admin-entity="students"] [data-col="course_name"]{min-width:185px}
+
+/* Jaga header identifier tetap satu baris juga. */
+#adminPane[data-admin-entity="courses"] th[data-col="course_code"],
+#adminPane[data-admin-entity="fields"] th[data-col="field_id"],
+#adminPane[data-admin-entity="internship_units"] th[data-col="unit_id"]{white-space:nowrap!important}
+
 </style>
 </head>
 <body>
@@ -221,7 +267,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.68.2'
+  VERSION:'6.68.3'
 });
 
 (function(){
@@ -335,7 +381,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.68.2</div>
+      <div class="hint" style="margin-top:16px">Versi 6.68.3</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -517,7 +563,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.68.2</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.68.3</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -1812,7 +1858,7 @@ function examMinutesHtmlV654(row,list,signatures){
  return `<main class="minutes-pdf-v654"><header class="ba-masthead"><div class="ba-institution"><div>Kementerian Keuangan Republik Indonesia</div><div>Badan Pendidikan dan Pelatihan Keuangan</div><div>Politeknik Keuangan Negara STAN</div></div><div class="ba-form-code">Form BA-USK</div></header><div class="ba-stage">${stage}</div><section class="ba-title"><div>Berita Acara Ujian Skripsi dan Komprehensif</div><div>Program Studi ${esc(prodiFullNameV641(row.program_name||'-'))}</div><div>Program Sarjana Terapan</div><div>Politeknik Keuangan Negara STAN</div></section><table class="ba-identity"><tbody><tr><td>Nama Mahasiswa</td><td>:</td><td>${esc(row.student_name||'-')}</td></tr><tr><td>Nomor Induk Mahasiswa</td><td>:</td><td>${esc(row.student_id||'-')}</td></tr><tr><td>Bidang Skripsi</td><td>:</td><td>${esc(row.field_name||'-')}</td></tr><tr><td>Judul Skripsi</td><td>:</td><td>${esc(row.title||'-')}</td></tr></tbody></table><table class="ba-score"><colgroup><col style="width:96mm"><col style="width:39.9mm"><col style="width:39.9mm"></colgroup><thead><tr><th>Nilai Rata-rata</th><th>NILAI ANGKA</th><th>Nilai Huruf</th></tr></thead><tbody><tr><td>SKRIPSI</td><td class="center">${pdfNumberV645(avg('thesis_score'),true)}</td><td class="center">${scoreLetterV639(avg('thesis_score'))}</td></tr><tr><td>UJIAN KOMPREHENSIF</td><td class="center">${pdfNumberV645(avg('comprehensive_score'),true)}</td><td class="center">${scoreLetterV639(avg('comprehensive_score'))}</td></tr></tbody></table><section class="ba-conclusion"><div>KESIMPULAN TIM PENGUJI</div><div>:</div><div>${esc(conclusion)}</div></section><div class="ba-date">Tangerang Selatan, ${dateText}</div><div class="ba-examiner-heading">TIM PENGUJI UJIAN SKRIPSI DAN KOMPREHENSIF:</div><table class="ba-examiners"><colgroup><col style="width:14.6mm"><col style="width:77mm"><col style="width:39.7mm"><col style="width:44.5mm"></colgroup><thead><tr><th>NO.</th><th>NAMA</th><th>KEDUDUKAN</th><th>TANDA TANGAN</th></tr></thead><tbody>${examinerRows}</tbody></table><div class="ba-notes"><div>Catatan:</div><div>*) Coret yang tidak perlu</div><div>**) Yudisium/Ujian Ulangan</div></div></main>`;
 }
 function examMinutesCssV654(){return `<style>.minutes-pdf-v654{box-sizing:border-box;width:215.9mm;height:329.2mm;margin:0;padding:15mm 20mm 20mm;overflow:hidden;background:#fff;color:#000;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt;line-height:1}.minutes-pdf-v654 *{box-sizing:border-box;font-family:"Bookman Old Style",Bookman,"URW Bookman L",serif;font-size:12pt}.minutes-pdf-v654 .ba-masthead{display:grid;grid-template-columns:1fr 50mm;align-items:start;gap:8mm}.minutes-pdf-v654 .ba-institution{text-transform:uppercase;line-height:1}.minutes-pdf-v654 .ba-institution div{white-space:nowrap}.minutes-pdf-v654 .ba-form-code{width:50mm;height:16mm;border:2px solid #222;display:flex;align-items:center;justify-content:center;font-size:15pt;font-weight:700;white-space:nowrap}.minutes-pdf-v654 .ba-stage{margin:7mm 0;text-align:right;font-size:21pt}.minutes-pdf-v654 .ba-title{text-align:center;text-transform:uppercase;margin-bottom:7mm}.minutes-pdf-v654 .ba-title div{margin-top:6pt}.minutes-pdf-v654 table{border-collapse:collapse;table-layout:fixed;width:175.8mm}.minutes-pdf-v654 .ba-identity{margin-bottom:7mm}.minutes-pdf-v654 .ba-identity td{padding:1.25mm 2mm;vertical-align:top}.minutes-pdf-v654 .ba-identity td:first-child{width:60mm;white-space:nowrap}.minutes-pdf-v654 .ba-identity td:nth-child(2){width:4.8mm;padding-left:0;padding-right:0;text-align:center}.minutes-pdf-v654 .ba-identity td:nth-child(3){width:111mm;text-align:justify;line-height:1.2;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-score td,.minutes-pdf-v654 .ba-examiners th,.minutes-pdf-v654 .ba-examiners td{border:1px solid #222;padding:2.6mm 2mm;vertical-align:middle}.minutes-pdf-v654 .ba-score th,.minutes-pdf-v654 .ba-examiners th{background:#d9d9d9;text-align:center;font-weight:700}.minutes-pdf-v654 .ba-score td:first-child{text-transform:uppercase}.minutes-pdf-v654 .center{text-align:center}.minutes-pdf-v654 .ba-conclusion{display:grid;grid-template-columns:42.5mm 4.4mm 128.9mm;width:175.8mm;margin-top:5mm}.minutes-pdf-v654 .ba-conclusion>div{padding:0 2mm}.minutes-pdf-v654 .ba-conclusion>div:first-child{padding-left:2mm}.minutes-pdf-v654 .ba-conclusion>div:nth-child(2){padding:0;text-align:center}.minutes-pdf-v654 .ba-conclusion>div:last-child{min-height:18mm;text-align:justify;white-space:pre-line;line-height:1.25;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-date{margin:4mm 0 6mm;text-align:right}.minutes-pdf-v654 .ba-examiner-heading{margin-bottom:4mm}.minutes-pdf-v654 .ba-examiners th:nth-child(2){letter-spacing:.25em}.minutes-pdf-v654 .ba-examiners td:first-child,.minutes-pdf-v654 .ba-examiners td:nth-child(3){text-align:center}.minutes-pdf-v654 .ba-examiner-row td{height:18mm}.minutes-pdf-v654 .ba-examiners td:nth-child(2){line-height:1.15;overflow-wrap:anywhere}.minutes-pdf-v654 .ba-signature{height:13mm;display:flex;align-items:center;justify-content:center;text-align:center}.minutes-pdf-v654 .ba-signature img{display:block;max-width:39mm;max-height:16mm;object-fit:contain}.minutes-pdf-v654 .ba-missing-sign{font-size:10pt;line-height:1.1}.minutes-pdf-v654 .ba-notes{margin-top:7mm;line-height:1.15}
-/* v6.68.2: administrasi satu-baris, striping tabel, dan filter prioritas magang. */
+/* v6.68.3: kompatibilitas style dokumen; layout aplikasi diatur pada stylesheet utama. */
 .table tbody tr:nth-child(odd){background:#fff}
 .table tbody tr:nth-child(even){background:#f7f9fc}
 .table tbody tr:hover{background:#eef5f7}
