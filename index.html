@@ -254,6 +254,64 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 #adminPane[data-admin-entity="fields"] th[data-col="field_id"],
 #adminPane[data-admin-entity="internship_units"] th[data-col="unit_id"]{white-space:nowrap!important}
 
+/* v6.68.5: kolom identifier dibuat sesempit isi agar ruang utama dipakai kolom informatif. */
+#adminPane[data-admin-entity="courses"] [data-col="course_id"],
+#adminPane[data-admin-entity="courses"] [data-col="course_code"],
+#adminPane[data-admin-entity="fields"] [data-col="field_id"],
+#adminPane[data-admin-entity="internship_units"] [data-col="unit_id"],
+#adminPane[data-admin-entity="students"] [data-col="student_id"]{
+  width:1%!important;min-width:0!important;max-width:none!important;
+  white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;
+}
+#adminPane[data-admin-entity="students"] [data-col="program_name"]{
+  width:68px!important;min-width:68px!important;max-width:68px!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#adminPane[data-admin-entity="students"] [data-col="thesis_title"]{
+  width:720px!important;min-width:620px!important;max-width:940px!important;
+  white-space:normal!important;overflow-wrap:break-word!important;word-break:normal!important;line-height:1.24;
+}
+#adminPane[data-admin-entity="students"] .table{min-width:1420px;table-layout:auto}
+/* Pastikan identifier dan kode benar-benar satu baris pada header maupun isi. */
+#adminPane[data-admin-entity="courses"] th[data-col="course_id"],
+#adminPane[data-admin-entity="courses"] td[data-col="course_id"],
+#adminPane[data-admin-entity="courses"] th[data-col="course_code"],
+#adminPane[data-admin-entity="courses"] td[data-col="course_code"],
+#adminPane[data-admin-entity="fields"] th[data-col="field_id"],
+#adminPane[data-admin-entity="fields"] td[data-col="field_id"],
+#adminPane[data-admin-entity="internship_units"] th[data-col="unit_id"],
+#adminPane[data-admin-entity="internship_units"] td[data-col="unit_id"],
+#adminPane[data-admin-entity="students"] th[data-col="student_id"],
+#adminPane[data-admin-entity="students"] td[data-col="student_id"]{white-space:nowrap!important}
+
+
+/* v6.68.5: header tabel dibedakan dan hover tombol aksi diperjelas. */
+.table > thead > tr > th{
+  background-color:#e8edf2!important;
+  color:#344054!important;
+  border-bottom:1px solid #d6dde5!important;
+}
+/* Header sticky tetap memakai warna yang sama. */
+.monitor-table-scroll .table th,
+.supervisor-monitoring-table .table th,
+#adminPane .table th{
+  background-color:#e8edf2!important;
+}
+
+/* Transisi visual tombol tanpa mengubah ukuran/layout. */
+.btn{
+  transition:background-color .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease,filter .15s ease;
+}
+.btn:not(:disabled):hover{box-shadow:0 2px 7px rgba(15,23,42,.11)}
+.btn:not(:disabled):active{box-shadow:inset 0 1px 3px rgba(15,23,42,.16)}
+.btn.primary:not(:disabled):hover{background:#0b3f4c;color:#fff}
+.btn.secondary:not(:disabled):hover{background:#d8ecef;color:#0b3f4c}
+.btn.ghost:not(:disabled):hover{background:#eef2f5;border-color:#bcc6d1;color:#101828}
+.btn.danger:not(:disabled):hover{background:#b4362c;color:#fff}
+.btn.success:not(:disabled):hover{background:#117a58;color:#fff}
+/* Tombol Keluar di header dibuat paling mudah dikenali saat pointer mendekat. */
+.topactions .btn.danger:not(:disabled):hover{background:#a52b22;color:#fff;border-color:#a52b22}
+
 </style>
 </head>
 <body>
@@ -267,7 +325,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.68.3'
+  VERSION:'6.68.5'
 });
 
 (function(){
@@ -381,7 +439,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div class="hint" style="margin-top:16px">Versi 6.68.3</div>
+      <div class="hint" style="margin-top:16px">Versi 6.68.5</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -563,7 +621,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.68.3</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.68.5</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -1688,7 +1746,7 @@ const META={
  courses:{key:'course_id',cols:['course_id','course_code','course_name','keywords','active'],fields:[['course_id','Course ID'],['course_code','Kode'],['course_name','Nama'],['keywords','Kata kunci Mata Kuliah','textarea'],['active','Aktif','check']]},
  fields:{key:'field_id',cols:['field_id','field_name','course_names','keywords','active'],fields:[['field_id','Field ID'],['field_name','Nama Bidang'],['course_ids','Mata Kuliah terkait','coursemulti'],['keywords','Kata kunci bidang','textarea'],['active','Aktif','check']]},
  lecturers:{key:'lecturer_id',cols:['lecturer_id','email','name','program_name','specialization_course_names','expertise','quota','active'],fields:[['lecturer_id','ID Dosen'],['email','Email','email'],['name','Nama'],['program_name','Prodi'],['phone_number','No. Telepon'],['specialization_course_ids','Mata Kuliah Spesialisasi','coursespecialization'],['expertise_manual','Ekspertise','expertise'],['quota','Kuota','number'],['active','Aktif','check']]},
- students:{key:'student_id',cols:['student_id','email','name','program_name','class_name','course_name','gender','phone_number','thesis_title','active','thesis_status'],fields:[['student_id','NIM'],['email','Email','email'],['name','Nama'],['program_name','Program Studi'],['class_name','Kelas'],['course_id','Mata Kuliah default','course'],['gender','Gender'],['phone_number','No. Telepon'],['thesis_status','Status Skripsi'],['active','Aktif','check']]},
+ students:{key:'student_id',cols:['student_id','email','name','program_name','class_name','gender','phone_number','thesis_title','active','thesis_status'],fields:[['student_id','NIM'],['email','Email','email'],['name','Nama'],['program_name','Program Studi'],['class_name','Kelas'],['course_id','Mata Kuliah default','course'],['gender','Gender'],['phone_number','No. Telepon'],['thesis_status','Status Skripsi'],['active','Aktif','check']]},
  internship_units:{key:'unit_id',cols:['unit_id','eselon1','eselon2','office_name','location','active'],fields:[['unit_id','Unit ID'],['eselon1','Eselon I'],['eselon2','Eselon II'],['office_name','Nama Kantor / Unit'],['location','Lokasi'],['active','Aktif','check']]}
 };
 
