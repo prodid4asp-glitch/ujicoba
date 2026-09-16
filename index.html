@@ -341,7 +341,7 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .bulk-help{font-size:11.5px;line-height:1.5;color:#475467}.bulk-error{white-space:pre-wrap;max-height:170px;overflow:auto}
 @media(max-width:760px){.bulk-summary{grid-template-columns:1fr}}
 
-/* v6.71.4: Surat Riset admin — filter + sortable header. */
+/* v6.71.5: Surat Riset admin — tanpa kolom Judul; filter + sortable header. */
 .letter-filter-v714{grid-template-columns:minmax(220px,2fr) minmax(130px,.75fr) minmax(150px,.9fr) auto}
 .table th.sortable-v714{padding:0}
 .table th.sortable-v714 button{width:100%;min-height:32px;padding:7px 9px;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:7px;white-space:nowrap}
@@ -363,7 +363,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.71.4'
+  VERSION:'6.71.5'
 });
 
 (function(){
@@ -477,7 +477,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.71.4</div>
+      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.71.5</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -661,7 +661,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.71.4</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.71.5</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -1753,7 +1753,7 @@ function letterTableRowsV714(){
 function renderLetterTableV714(){
  const host=$('letterTableHostV714');if(!host)return;
  const role=S.boot.user.role_id,permissions=S.boot.permissions||[],canAdmin=role==='admin'||permissions.includes('*')||permissions.includes('admin.research_letter'),state=S.cache.letterTableV714||(S.cache.letterTableV714={q:'',status:'',type:'',sortKey:'submitted_at',sortDir:'asc'}),rows=letterTableRowsV714();
- const adminCols=[['submitted_at','Tanggal',v=>dt(v)],['student_name','Mahasiswa'],['research_title','Judul'],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',v=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',v=>v?`<a target="_blank" rel="noopener" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_file_url','Surat Jadi',v=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']];
+ const adminCols=[['submitted_at','Tanggal',v=>dt(v)],['student_name','Mahasiswa'],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',v=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',v=>v?`<a target="_blank" rel="noopener" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_file_url','Surat Jadi',v=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']];
  const studentCols=[['submitted_at','Tanggal',v=>dt(v)],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',v=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',v=>v?`<a target="_blank" rel="noopener" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_file_url','Surat Jadi',v=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']];
  const cols=canAdmin?adminCols:studentCols;
  const actions=canAdmin?(r=>`<button class="btn primary small" data-action="process-letter" data-id="${attr(r.letter_id)}">Proses Surat</button>`):(role==='student'?(r=>letterWaitingV713(r)?`<div class="actions"><button class="btn secondary small" data-action="edit-my-letter" data-id="${attr(r.letter_id)}">Edit</button><button class="btn danger small" data-action="delete-my-letter" data-id="${attr(r.letter_id)}">Hapus</button></div>`:''):null);
