@@ -340,6 +340,16 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .bulk-preview{max-height:300px;overflow:auto;border:1px solid var(--line);margin-top:10px}.bulk-preview .table{min-width:720px}.bulk-preview .table th,.bulk-preview .table td{padding:5px 7px;font-size:10.5px}
 .bulk-help{font-size:11.5px;line-height:1.5;color:#475467}.bulk-error{white-space:pre-wrap;max-height:170px;overflow:auto}
 @media(max-width:760px){.bulk-summary{grid-template-columns:1fr}}
+
+/* v6.71.4: Surat Riset admin — filter + sortable header. */
+.letter-filter-v714{grid-template-columns:minmax(220px,2fr) minmax(130px,.75fr) minmax(150px,.9fr) auto}
+.table th.sortable-v714{padding:0}
+.table th.sortable-v714 button{width:100%;min-height:32px;padding:7px 9px;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:7px;white-space:nowrap}
+.table th.sortable-v714 button:hover{background:rgba(15,76,92,.07)}
+.table th.sortable-v714 .sortmark-v714{font-size:10px;color:#667085;min-width:10px;text-align:center}
+.letter-table-v714 td:first-child,.letter-table-v714 th:first-child{width:42px;text-align:center;white-space:nowrap}
+.letter-table-v714 td:last-child,.letter-table-v714 th:last-child{text-align:center}
+@media(max-width:760px){.letter-filter-v714{grid-template-columns:1fr 1fr}.letter-filter-v714>.field:first-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -353,7 +363,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.71.3'
+  VERSION:'6.71.4'
 });
 
 (function(){
@@ -467,7 +477,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.71.3</div>
+      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.71.4</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -651,7 +661,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.71.3</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.71.4</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -1711,15 +1721,66 @@ function letterFormHtml(ctx,hidden){
 }
 function updateLetterTemplatePreview(){const type=val('lType'),box=$('letterTemplateBox');if(!box)return;const key=type==='INTERNAL'?'internal':type==='DJP'?'djp':'external';const url=box.dataset[key]||'';box.innerHTML=url?`<b>Contoh format ${esc(type)}</b><br><a href="${attr(url)}" target="_blank" rel="noopener">Unduh / buka file contoh format</a>`:`<b>Contoh format ${esc(type)}</b><br><span class="hint">Admin belum mengatur link contoh format untuk jenis surat ini.</span>`}
 function letterWaitingV713(r){return ['SUBMITTED','PENDING','MENUNGGU'].includes(String(r?.status||'').trim().toUpperCase())}
-function renderLetters(b){
- const rows=(b.letters||[]).slice().sort((a,z)=>String(z.submitted_at||'').localeCompare(String(a.submitted_at||''))),role=S.boot.user.role_id,ctx=b.letterContext||{},permissions=S.boot.permissions||[];
- const canAdmin=role==='admin'||permissions.includes('*')||permissions.includes('admin.research_letter');
- S.cache.letters=rows;S.cache.letterContext=ctx;let h='';
+function letterSortValueV714(r,key){
+ if(key==='submitted_at'){const t=new Date(r?.submitted_at||0).getTime();return Number.isFinite(t)?t:0}
+ if(key==='letter_type')return letterTypeLabel(r?.letter_type||'');
+ if(key==='status')return statusLabel(r?.status||'');
+ if(key==='supporting_document_url'||key==='letter_file_url')return r?.[key]?1:0;
+ return String(r?.[key]??'').trim().toLocaleLowerCase('id-ID');
+}
+function letterSortHeaderV714(key,label,state,sortable){
+ if(!sortable)return `<th>${esc(label)}</th>`;
+ const active=state.sortKey===key,mark=active?(state.sortDir==='asc'?'▲':'▼'):'↕';
+ return `<th class="sortable-v714" aria-sort="${active?(state.sortDir==='asc'?'ascending':'descending'):'none'}"><button type="button" data-letter-sort-v714="${attr(key)}" title="Urutkan berdasarkan ${attr(label)}"><span>${esc(label)}</span><span class="sortmark-v714">${mark}</span></button></th>`;
+}
+function letterTableRowsV714(){
+ const state=S.cache.letterTableV714||(S.cache.letterTableV714={q:'',status:'',type:'',sortKey:'submitted_at',sortDir:'asc'}),role=S.boot.user.role_id,canAdmin=role==='admin'||(S.boot.permissions||[]).includes('*')||(S.boot.permissions||[]).includes('admin.research_letter');
+ let rows=(S.cache.letters||[]).slice();
+ if(canAdmin){
+  const tokens=String(state.q||'').toLocaleLowerCase('id-ID').split(/\s+/).filter(Boolean);
+  rows=rows.filter(r=>{
+   if(state.status&&String(r.status||'')!==state.status)return false;
+   if(state.type&&String(r.letter_type||'')!==state.type)return false;
+   if(!tokens.length)return true;
+   const corpus=[r.student_name,r.student_id,r.research_title,r.salutation_official,r.institution,letterTypeLabel(r.letter_type),statusLabel(r.status),r.contact_person,r.contact_info].join(' ').toLocaleLowerCase('id-ID');
+   return tokens.every(t=>corpus.includes(t));
+  });
+ }
+ const key=state.sortKey||'submitted_at',dir=state.sortDir==='desc'?-1:1;
+ rows.sort((a,b)=>{const av=letterSortValueV714(a,key),bv=letterSortValueV714(b,key);if(typeof av==='number'&&typeof bv==='number')return (av-bv)*dir;return String(av).localeCompare(String(bv),'id',{numeric:true,sensitivity:'base'})*dir});
+ return rows;
+}
+function renderLetterTableV714(){
+ const host=$('letterTableHostV714');if(!host)return;
+ const role=S.boot.user.role_id,permissions=S.boot.permissions||[],canAdmin=role==='admin'||permissions.includes('*')||permissions.includes('admin.research_letter'),state=S.cache.letterTableV714||(S.cache.letterTableV714={q:'',status:'',type:'',sortKey:'submitted_at',sortDir:'asc'}),rows=letterTableRowsV714();
+ const adminCols=[['submitted_at','Tanggal',v=>dt(v)],['student_name','Mahasiswa'],['research_title','Judul'],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',v=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',v=>v?`<a target="_blank" rel="noopener" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_file_url','Surat Jadi',v=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']];
+ const studentCols=[['submitted_at','Tanggal',v=>dt(v)],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',v=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',v=>v?`<a target="_blank" rel="noopener" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_file_url','Surat Jadi',v=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']];
+ const cols=canAdmin?adminCols:studentCols;
  const actions=canAdmin?(r=>`<button class="btn primary small" data-action="process-letter" data-id="${attr(r.letter_id)}">Proses Surat</button>`):(role==='student'?(r=>letterWaitingV713(r)?`<div class="actions"><button class="btn secondary small" data-action="edit-my-letter" data-id="${attr(r.letter_id)}">Edit</button><button class="btn danger small" data-action="delete-my-letter" data-id="${attr(r.letter_id)}">Hapus</button></div>`:''):null);
- const monitor=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Pengajuan Surat Riset</h3><p>Pantau status pengajuan dan surat yang telah diterbitkan.</p></div>${role==='student'?'<button class="btn primary" data-action="new-letter">+ Tambah Pengajuan Surat Riset</button>':''}</div>${table(rows,[['submitted_at','Tanggal',(v)=>dt(v)],['student_name','Mahasiswa'],['research_title','Judul'],['salutation_official','Pejabat Tujuan'],['institution','Instansi/Unit'],['letter_type','Jenis',(v)=>esc(letterTypeLabel(v))],['supporting_document_url','Kelengkapan',(v)=>v?`<a target="_blank" href="${attr(v)}">Buka</a>`:'-'],['status','Status',statusBadge],['letter_number','Nomor'],['letter_file_url','Surat Jadi',(v)=>v?`<a class="download-link" target="_blank" rel="noopener" href="${attr(v)}"><span aria-hidden="true">⇩</span> Download</a>`:'-']],actions)}</section>`;
- h+=monitor;
+ if(!rows.length){host.innerHTML='<div class="card empty">Belum ada data yang sesuai.</div>';const c=$('letterCountV714');if(c)c.textContent='0 data';return}
+ host.innerHTML=`<div class="tablewrap"><table class="table letter-table-v714"><thead><tr><th>No.</th>${cols.map(c=>letterSortHeaderV714(c[0],c[1],state,canAdmin)).join('')}${actions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td>${cols.map(c=>`<td>${c[2]?c[2](r[c[0]],r):esc(r[c[0]]??'-')}</td>`).join('')}${actions?`<td>${actions(r,i)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
+ const count=$('letterCountV714');if(count)count.textContent=`${rows.length} dari ${(S.cache.letters||[]).length} data`;
+ if(window.__bindPortalDomV52)window.__bindPortalDomV52(host);
+ host.querySelectorAll('[data-letter-sort-v714]').forEach(btn=>{btn.onclick=()=>{const key=btn.dataset.letterSortV714;if(state.sortKey===key)state.sortDir=state.sortDir==='asc'?'desc':'asc';else{state.sortKey=key;state.sortDir=key==='submitted_at'?'asc':'asc'}renderLetterTableV714()}});
+}
+function bindLetterFiltersV714(){
+ const state=S.cache.letterTableV714||(S.cache.letterTableV714={q:'',status:'',type:'',sortKey:'submitted_at',sortDir:'asc'}),q=$('letterSearchV714'),status=$('letterStatusV714'),type=$('letterTypeV714');
+ if(q)q.oninput=()=>{state.q=q.value;renderLetterTableV714()};
+ if(status)status.onchange=()=>{state.status=status.value;renderLetterTableV714()};
+ if(type)type.onchange=()=>{state.type=type.value;renderLetterTableV714()};
+}
+function renderLetters(b){
+ const rows=(b.letters||[]).slice(),role=S.boot.user.role_id,ctx=b.letterContext||{},permissions=S.boot.permissions||[];
+ const canAdmin=role==='admin'||permissions.includes('*')||permissions.includes('admin.research_letter');
+ S.cache.letters=rows;S.cache.letterContext=ctx;
+ const state=S.cache.letterTableV714||(S.cache.letterTableV714={q:'',status:'',type:'',sortKey:'submitted_at',sortDir:'asc'});
+ const statuses=[...new Set(rows.map(r=>String(r.status||'')).filter(Boolean))].sort((a,b)=>statusLabel(a).localeCompare(statusLabel(b),'id'));
+ const types=[...new Set(rows.map(r=>String(r.letter_type||'')).filter(Boolean))].sort((a,b)=>letterTypeLabel(a).localeCompare(letterTypeLabel(b),'id'));
+ let h=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Pengajuan Surat Riset</h3><p>Pantau status pengajuan dan surat yang telah diterbitkan.</p></div>${role==='student'?'<button class="btn primary" data-action="new-letter">+ Tambah Pengajuan Surat Riset</button>':''}</div>`;
+ if(canAdmin)h+=`<div class="filterbar letter-filter-v714"><div class="field"><label>Cari pengajuan</label><input id="letterSearchV714" type="search" value="${attr(state.q||'')}" placeholder="Nama, NIM, instansi, pejabat, judul..."></div><div class="field"><label>Status</label><select id="letterStatusV714"><option value="">Semua status</option>${statuses.map(v=>`<option value="${attr(v)}" ${state.status===v?'selected':''}>${esc(statusLabel(v))}</option>`).join('')}</select></div><div class="field"><label>Jenis Surat</label><select id="letterTypeV714"><option value="">Semua jenis</option>${types.map(v=>`<option value="${attr(v)}" ${state.type===v?'selected':''}>${esc(letterTypeLabel(v))}</option>`).join('')}</select></div><span id="letterCountV714" class="filter-count"></span></div>`;
+ h+=`<div id="letterTableHostV714"></div></section>`;
  if(role==='student')h+=letterFormHtml(ctx,!S.cache.letterFormOpen);
- $('content').innerHTML=h;if(role==='student'&&S.cache.letterFormOpen)showNewLetterForm()
+ $('content').innerHTML=h;renderLetterTableV714();if(canAdmin)bindLetterFiltersV714();if(role==='student'&&S.cache.letterFormOpen)showNewLetterForm();
 }
 function inlineFormPageV64(id){return id==='guidanceNewForm'?'guidance':id==='documentNewForm'?'documents':id==='newLetterForm'?'letters':''}
 function setInlineFormStateV64(id,open){const page=inlineFormPageV64(id);if(page==='guidance')S.cache.guidanceFormOpen=!!open;if(page==='documents')S.cache.documentFormOpen=!!open;if(page==='letters')S.cache.letterFormOpen=!!open;return page}
