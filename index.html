@@ -354,6 +354,20 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .letter-table-v714 td:first-child,.letter-table-v714 th:first-child{width:42px;text-align:center;white-space:nowrap}
 .letter-table-v714 td:last-child,.letter-table-v714 th:last-child{text-align:center}
 @media(max-width:760px){.letter-filter-v714{grid-template-columns:1fr 1fr}.letter-filter-v714>.field:first-child{grid-column:1/-1}}
+
+/* v6.72.8: sidebar benar-benar tetap pada viewport; hanya isi utama yang bergulir. */
+@media(min-width:761px){
+  .app,.app.collapsed{display:block}
+  .sidebar{position:fixed!important;top:0;left:0;bottom:0;width:260px;height:100dvh;overflow-y:auto;overscroll-behavior:contain;z-index:20}
+  .app.collapsed .sidebar{width:76px}
+  .main{margin-left:260px;min-height:100vh;transition:margin-left .18s ease}
+  .app.collapsed .main{margin-left:76px}
+}
+@media(max-width:760px){
+  .sidebar{position:fixed!important;top:0;bottom:0;height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+  body.mobile-sidebar-open{overflow:hidden;touch-action:none}
+  body.mobile-sidebar-open .sidebar{touch-action:auto}
+}
 </style>
 </head>
 <body>
@@ -367,7 +381,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.72.7'
+  VERSION:'6.72.8'
 });
 
 (function(){
@@ -481,7 +495,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.7</div>
+      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.8</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -613,7 +627,7 @@ window.PORTAL_CONFIG=Object.freeze({
     }
     if(action==='sidebar-toggle'||action==='mobile-menu'){
       var app=document.getElementById('app'), side=document.getElementById('sidebar');
-      if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){if(side)side.classList.toggle('mobile-open');return;}
+      if(window.matchMedia&&window.matchMedia('(max-width:760px)').matches){if(side){var open=!side.classList.contains('mobile-open');side.classList.toggle('mobile-open',open);document.body.classList.toggle('mobile-sidebar-open',open);}return;}
       if(app){app.classList.toggle('collapsed');try{localStorage.setItem('portal_v60_collapsed',app.classList.contains('collapsed')?'1':'0');}catch(_){}}
       return;
     }
@@ -665,7 +679,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.72.7</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.72.8</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -890,7 +904,7 @@ async function refreshPageV52(page,showError=true){
 }
 async function loadPage(page,force=false){
   closeUserMenuV670();
-  page=isPageAllowed(page)?page:'dashboard';const previousPage=S.page;if(previousPage!==page){S.prefetchGeneration=(S.prefetchGeneration||0)+1;resetPageComposerV64(page)}if(page!=='documents')stopDocumentsRealtimeV620();if(page!=='supervisor')stopSupervisorRealtimeV621();if(page!=='internship')stopInternshipRealtimeV622();S.page=page;save();markNav();$('sidebar').classList.remove('mobile-open');
+  page=isPageAllowed(page)?page:'dashboard';const previousPage=S.page;if(previousPage!==page){S.prefetchGeneration=(S.prefetchGeneration||0)+1;resetPageComposerV64(page)}if(page!=='documents')stopDocumentsRealtimeV620();if(page!=='supervisor')stopSupervisorRealtimeV621();if(page!=='internship')stopInternshipRealtimeV622();S.page=page;save();markNav();$('sidebar').classList.remove('mobile-open');document.body.classList.remove('mobile-sidebar-open');
   if(page==='admin'){
     renderAdminShell();
     const cachedTab=S.workspace.adminTabs?.[S.adminTab];
@@ -1079,14 +1093,14 @@ function renderInternshipStudent(b){
  const st=b.student||{},e=b.eligibility||{},rows=internshipStudentHistoryRows(b),own=b.ownApplications||[],form=S.cache.internshipForm;
  const active=own.filter(a=>!['Ditolak','cancel'].includes(String(a.status||'')));
  let h=`<section class="hero"><h3>Pengajuan Magang</h3><p>Ajukan magang Kemenkeu atau Non-Kemenkeu, pantau proses surat, dan konfirmasi hasil penempatan dari satu halaman.</p></section>`;
- h+=cards([{label:'Total riwayat',value:rows.length},{label:'Kemenkeu siklus ini',value:`${e.kemenkeu?.count||0}/1`},{label:'Non-Kemenkeu siklus ini',value:`${e.nonKemenkeu?.count||0}/3`},{label:'Siklus',value:e.cycle_no||1}]);
+ h+=cards([{label:'Total riwayat',value:rows.length},{label:'Kemenkeu tahap ini',value:`${e.kemenkeu?.count||0}/1`},{label:'Non-Kemenkeu tahap ini',value:`${e.nonKemenkeu?.count||0}/3`},{label:'Tahap',value:e.stage_no||e.cycle_no||1}]);
  h+=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Pengajuan Magang</h3><p>Pengajuan berstatus Menunggu dapat diedit atau dibatalkan. Setelah Surat Siap, file TTE dapat dibuka dari tabel.</p></div><button class="btn primary" data-action="intern-open" ${e.hasAccepted?'disabled title="Pengajuan baru dinonaktifkan karena status magang sudah Diterima"':''}>+ Tambah Pengajuan Magang</button></div>${internshipStudentTable(rows,st)}</section>`;
 const confirmationApps=rows.filter(a=>a.type==='non-kemenkeu'&&(a.members||[]).some(m=>String(m.student_id)===String(st.student_id))&&Object.values(a.memberStatuses||{}).some(x=>String(x)==='Surat Siap'));
  if(e.hasAccepted)h+=`<div class="alert success" style="margin-bottom:14px"><b>Pengajuan magang selesai.</b><br>Status magang Anda sudah Diterima, sehingga pengajuan baru dinonaktifkan.</div>`;
  if(confirmationApps.length){h+=`<section class="card"><div class="sectionhead"><div><h3>Konfirmasi Hasil Non-Kemenkeu</h3><p>Setelah status menjadi Surat Siap, setiap mahasiswa dapat menyimpan konfirmasi Diterima atau Ditolak untuk dirinya. PIC juga dapat membantu mengonfirmasi anggota lain.</p></div></div>${confirmationApps.map(a=>{const isPic=String(a.pic_student_id||'')===String(st.student_id||''),visibleMembers=(a.members||[]).filter(m=>isPic||String(m.student_id)===String(st.student_id));return `<div class="subtlebox" style="margin-bottom:12px"><b>${esc(a.office_name||'Instansi')}</b><div class="hint">Prioritas ${esc(a.priority_no||'-')} · ${internshipStatus(a.status)}</div>${visibleMembers.map(m=>{const ms=(a.memberStatuses||{})[String(m.student_id)]||a.status;return `<div class="sectionhead" style="margin-top:10px"><div><b>${esc(m.name||m.student_id)}</b><p>${esc(m.student_id)} · ${internshipStatus(ms)}</p></div>${String(ms)==='Surat Siap'?`<div class="actions"><button class="btn success small" data-action="intern-finalize" data-id="${attr(a.application_id)}" data-student="${attr(m.student_id)}" data-decision="Diterima">Diterima</button><button class="btn danger small" data-action="intern-finalize" data-id="${attr(a.application_id)}" data-student="${attr(m.student_id)}" data-decision="Ditolak">Ditolak</button></div>`:''}</div>`}).join('')}</div>`}).join('')}</section>`}
  if(form){h+=`<div id="internshipComposer">${renderInternshipForm(form,b)}</div>`}else if(S.cache.internshipComposerOpen){
    const canK=!!e.kemenkeu?.canSubmit,canN=!!e.nonKemenkeu?.canSubmit;
-   h+=`<section id="internshipComposer" class="card"><div class="sectionhead"><div><h3>${active.length?'Tambah Pengajuan yang Diizinkan':'Pilih Jenis Pengajuan Magang'}</h3><p>Kemenkeu maksimal satu pengajuan per siklus. Non-Kemenkeu maksimal tiga prioritas dan diajukan satu per satu. Jalur aktif tidak dapat dicampur.</p></div><button class="btn ghost" data-action="intern-cancel">Tutup</button></div><div class="internship-choice-grid"><div class="card"><h3>Kemenkeu</h3><p class="muted">3 preferensi penempatan pada unit di lingkungan Kementerian Keuangan.</p><div class="hint">Riwayat siklus: ${esc(e.kemenkeu?.count||0)}/1</div>${e.kemenkeu?.reason?`<div class="alert" style="margin-top:10px">${esc(e.kemenkeu.reason)}</div>`:''}<button class="btn primary" data-action="intern-new" data-type="kemenkeu" ${canK?'':'disabled'} style="margin-top:12px">Ajukan Kemenkeu</button></div><div class="card"><h3>Non-Kemenkeu</h3><p class="muted">Individu/kelompok ke instansi pemerintah di luar Kemenkeu, BUMN/BUMD, swasta, atau organisasi lain.</p><div class="hint">Riwayat siklus: ${esc(e.nonKemenkeu?.count||0)}/3 · sisa ${esc(e.nonKemenkeu?.remaining??3)}</div>${e.nonKemenkeu?.reason?`<div class="alert" style="margin-top:10px">${esc(e.nonKemenkeu.reason)}</div>`:''}<button class="btn primary" data-action="intern-new" data-type="non-kemenkeu" ${canN?'':'disabled'} style="margin-top:12px">Ajukan Prioritas ${esc(e.nonKemenkeu?.nextPriority||1)}</button></div></div></section>`;
+   h+=`<section id="internshipComposer" class="card"><div class="sectionhead"><div><h3>${active.length?'Tambah Pengajuan yang Diizinkan':'Pilih Jenis Pengajuan Magang'}</h3><p>Kemenkeu maksimal satu pengajuan per tahap. Non-Kemenkeu maksimal tiga prioritas dan diajukan satu per satu. Jalur aktif tidak dapat dicampur.</p></div><button class="btn ghost" data-action="intern-cancel">Tutup</button></div><div class="internship-choice-grid"><div class="card"><h3>Kemenkeu</h3><p class="muted">3 preferensi penempatan pada unit di lingkungan Kementerian Keuangan.</p><div class="hint">Riwayat tahap: ${esc(e.kemenkeu?.count||0)}/1</div>${e.kemenkeu?.reason?`<div class="alert" style="margin-top:10px">${esc(e.kemenkeu.reason)}</div>`:''}<button class="btn primary" data-action="intern-new" data-type="kemenkeu" ${canK?'':'disabled'} style="margin-top:12px">Ajukan Kemenkeu</button></div><div class="card"><h3>Non-Kemenkeu</h3><p class="muted">Individu/kelompok ke instansi pemerintah di luar Kemenkeu, BUMN/BUMD, swasta, atau organisasi lain.</p><div class="hint">Riwayat tahap: ${esc(e.nonKemenkeu?.count||0)}/3 · sisa ${esc(e.nonKemenkeu?.remaining??3)}</div>${e.nonKemenkeu?.reason?`<div class="alert" style="margin-top:10px">${esc(e.nonKemenkeu.reason)}</div>`:''}<button class="btn primary" data-action="intern-new" data-type="non-kemenkeu" ${canN?'':'disabled'} style="margin-top:12px">Ajukan Prioritas ${esc(e.nonKemenkeu?.nextPriority||1)}</button></div></div></section>`;
  }
  $('content').innerHTML=h;internshipApplyUnitFilters();internshipSyncKind();
 }
@@ -1098,8 +1112,13 @@ function renderInternshipNKForm(a,st,b){let extras=(a.members||[]).filter(m=>Str
 function internshipApplyUnitFilters(){document.querySelectorAll('[data-intern-e1]').forEach(e1=>{const i=e1.dataset.internE1,e2=$('imK_e2_'+i);if(!e2)return;const parent=e1.value;Array.from(e2.options).forEach(o=>{if(!o.value)return;o.hidden=!!parent&&o.dataset.parent!==parent});if(e2.selectedOptions[0]?.hidden)e2.value=''})}
 function internshipSyncKind(){const kind=$('imKind'),box=$('imGroupBox');if(!kind||!box)return;const group=kind.value==='Kelompok';box.querySelector('[data-action="intern-member-add"]')?.classList.toggle('hidden',!group);const list=$('imMemberList');if(list)list.classList.toggle('hidden',!group)}
 function rerenderInternshipV64(){const b=newestPageBundleV64('internship',S.cache.internship);S.cache.internship=b;renderInternshipStudent(b)}
-function internshipOpen(){if(S.cache.internship?.eligibility?.hasAccepted)return toast('Status magang sudah Diterima. Anda tidak dapat membuat pengajuan baru.',true);S.cache.internshipComposerOpen=true;S.cache.internshipForm=null;rerenderInternshipV64();scrollToFormV667('internshipComposer')}
-function internshipStart(type){if(S.cache.internship?.eligibility?.hasAccepted)return toast('Status magang sudah Diterima. Anda tidak dapat membuat pengajuan baru.',true);S.cache.internshipComposerOpen=true;S.cache.internshipForm={type};rerenderInternshipV64();scrollToFormV667('internshipComposer')}
+function internshipStageLimitNoticeV6728(){
+ const e=S.cache.internship?.eligibility||{},stage=e.stage_no||e.cycle_no||1;
+ openModal('Pengajuan Magang',`Tahap ${esc(stage)}`,`<div class="alert"><b>Batas pengajuan tahap ini sudah tercapai.</b><br>Anda sudah memiliki 3 prioritas pengajuan Non-Kemenkeu pada Tahap ${esc(stage)}. Untuk sementara Anda belum dapat membuat pengajuan magang baru.</div>`,`<span></span><button class="btn primary" data-action="close-modal">Tutup</button>`);
+ document.querySelector('#modalBack .modal')?.classList.add('compact-modal');
+}
+function internshipOpen(){const e=S.cache.internship?.eligibility||{};if(e.hasAccepted)return toast('Status magang sudah Diterima. Anda tidak dapat membuat pengajuan baru.',true);if(e.stageLimitReached||Number(e.nonKemenkeu?.count||0)>=3)return internshipStageLimitNoticeV6728();S.cache.internshipComposerOpen=true;S.cache.internshipForm=null;rerenderInternshipV64();scrollToFormV667('internshipComposer')}
+function internshipStart(type){const e=S.cache.internship?.eligibility||{};if(e.hasAccepted)return toast('Status magang sudah Diterima. Anda tidak dapat membuat pengajuan baru.',true);if(e.stageLimitReached||Number(e.nonKemenkeu?.count||0)>=3)return internshipStageLimitNoticeV6728();S.cache.internshipComposerOpen=true;S.cache.internshipForm={type};rerenderInternshipV64();scrollToFormV667('internshipComposer')}
 function internshipEdit(id){const a=(S.cache.internship?.ownApplications||[]).find(x=>String(x.application_id)===String(id));if(!a)return toast('Pengajuan tidak ditemukan.',true);S.cache.internshipComposerOpen=true;S.cache.internshipForm={type:a.type,application:a};rerenderInternshipV64()}
 function internshipCancel(){S.cache.internshipForm=null;S.cache.internshipComposerOpen=false;rerenderInternshipV64()}
 function internshipMembersPayload(){const owner=S.cache.internship?.student?.student_id;const rows=[{student_id:owner,unit:val('imOwnerTargetUnit')}];if(val('imKind')==='Kelompok')document.querySelectorAll('[data-intern-member-row]').forEach(r=>{const sid=r.querySelector('[data-intern-member]')?.value||'',unit=r.querySelector('[data-intern-member-unit]')?.value||'';if(sid)rows.push({student_id:sid,unit})});return rows}
@@ -2012,7 +2031,7 @@ function openModal(title,sub,body,foot){document.querySelector('#modalBack .moda
 function closeModal(){S.cache.pendingSupervisorSubmissionV622=null;S.cache.pendingSupervisorDecisionV630=null;S.cache.pendingSupervisorCancelV630=null;S.cache.pendingInternshipCancelV630=null;S.cache.pendingGuidanceDeleteV713=null;S.cache.pendingLetterDeleteV713=null;S.cache.pendingBulkDownloadV721=null;$('modalBack').classList.remove('show');$('modalBody').innerHTML='';$('modalFoot').innerHTML=''}
 function closeUserMenuV670(){const menu=$('accountMenu'),drop=$('accountDropdown'),trigger=$('accountTrigger');menu?.classList.remove('open');drop?.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}
 function toggleUserMenuV670(){const menu=$('accountMenu'),drop=$('accountDropdown'),trigger=$('accountTrigger');if(!menu||!drop)return;const opening=drop.classList.contains('hidden');if(opening){menu.classList.add('open');drop.classList.remove('hidden');trigger?.setAttribute('aria-expanded','true')}else closeUserMenuV670()}
-function toggleSidebar(){if(window.matchMedia('(max-width:760px)').matches){$('sidebar').classList.toggle('mobile-open');return}S.collapsed=!S.collapsed;save();$('app').classList.toggle('collapsed',S.collapsed);const t=$('sideToggle');if(t)t.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}
+function toggleSidebar(){if(window.matchMedia('(max-width:760px)').matches){const side=$('sidebar'),open=!side?.classList.contains('mobile-open');side?.classList.toggle('mobile-open',open);document.body.classList.toggle('mobile-sidebar-open',open);return}S.collapsed=!S.collapsed;save();$('app').classList.toggle('collapsed',S.collapsed);const t=$('sideToggle');if(t)t.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}
 const HANDLERS={
  'confirm-submit-supervisor':()=>confirmSubmitSupervisorV622(),'confirm-supervisor-response':()=>confirmSupervisorResponseV630(),'confirm-cancel-supervisor':()=>confirmSupervisorCancelV630(),'confirm-cancel-internship':()=>confirmInternshipCancelV630(),'delete-supervisor-request':el=>deleteSupervisorRequestV622(el.dataset.id),
  'logout':()=>confirmLogoutV640(),'logout-confirm':()=>logout(),'exam-score-lock':el=>lockExamScoreV640(el.dataset.id),
@@ -2032,7 +2051,7 @@ function bindPortalDomV52(root){
     el.onclick=function(ev){
       if(ev){ev.preventDefault();ev.stopPropagation();}
       const page=el.getAttribute('data-page');
-      if(page!==null){if(window.matchMedia('(max-width:760px)').matches)$('sidebar')?.classList.remove('mobile-open');return Promise.resolve(loadPage(page)).catch(x=>toast(x.message||String(x),true));}
+      if(page!==null){if(window.matchMedia('(max-width:760px)').matches){$('sidebar')?.classList.remove('mobile-open');document.body.classList.remove('mobile-sidebar-open')}return Promise.resolve(loadPage(page)).catch(x=>toast(x.message||String(x),true));}
       const tab=el.getAttribute('data-admin-tab');
       if(tab!==null)return Promise.resolve(loadAdminTab(tab)).catch(x=>toast(x.message||String(x),true));
       const action=el.getAttribute('data-action');
@@ -2051,7 +2070,7 @@ window.__portalMainReadyV52=true;
 if(window.__pendingPortalActionsV52&&window.__pendingPortalActionsV52.length){const q=window.__pendingPortalActionsV52.splice(0);q.forEach(x=>{const fn=HANDLERS[x.action];if(fn)Promise.resolve(fn(x.el,null)).catch(e=>toast(e.message||String(e),true));});}
 if(window.__pendingPortalPageV52){const p=window.__pendingPortalPageV52;window.__pendingPortalPageV52='';setTimeout(()=>window.__portalPageRouterV52(p),0)}
 if(window.__pendingPortalAdminTabV52){const t=window.__pendingPortalAdminTabV52;window.__pendingPortalAdminTabV52='';setTimeout(()=>window.__portalAdminTabRouterV52(t),0)}
-document.addEventListener('click',e=>{const menu=$('accountMenu');if(menu&&!menu.contains(e.target))closeUserMenuV670();if(window.matchMedia('(max-width:760px)').matches){const side=$('sidebar'),toggle=$('sideToggle');if(side?.classList.contains('mobile-open')&&!side.contains(e.target)&&!toggle?.contains(e.target))side.classList.remove('mobile-open')}});
+document.addEventListener('click',e=>{const menu=$('accountMenu');if(menu&&!menu.contains(e.target))closeUserMenuV670();if(window.matchMedia('(max-width:760px)').matches){const side=$('sidebar'),toggle=$('sideToggle');if(side?.classList.contains('mobile-open')&&!side.contains(e.target)&&!toggle?.contains(e.target)){side.classList.remove('mobile-open');document.body.classList.remove('mobile-sidebar-open')}}});
 $('modalBack').addEventListener('click',e=>{if(e.target===$('modalBack'))closeModal()});
 document.addEventListener('toggle',e=>{if(e.target?.matches?.('details'))rememberDetailStateV632(e.target)},true);
 document.addEventListener('change',e=>{if(e.target?.matches?.('details'))rememberDetailStateV632(e.target);if(['scheduleAcademicYear','scheduleSemester'].includes(e.target?.id))return applySchedulePeriodV632();if(['dStudent','dHasRevision','dType'].includes(e.target?.id))syncDocumentThesisInfoV635();if(e.target&&e.target.id==='svField')syncSupervisorCourse();if(['recMatch'].includes(e.target?.id))applySupervisorRecommendationFiltersV617();if(['smStatus','smProgram'].includes(e.target?.id))applySupervisorApplicationFiltersV617();if(['laProgram','laStatus'].includes(e.target?.id))applyLecturerAvailabilityFiltersV630();if(['adminUserRole','adminUserActive'].includes(e.target?.id))applyAdminUserFiltersV617();if(e.target&&['scStudent','scStudentSearch'].includes(e.target.id))scheduleStudentSync();if(e.target&&e.target.id==='lType')updateLetterTemplatePreview();if(e.target&&e.target.id==='imKind')internshipSyncKind();if(e.target?.matches?.('[data-intern-e1]'))internshipApplyUnitFilters();if(e.target?.matches?.('[data-profile-specialization]'))profileSpecializationCountV616();if(e.target&&e.target.id==='imPic'){const s=internshipStudents().find(x=>String(x.student_id)===String(e.target.value));if(s){if($('imPicEmail')&&!val('imPicEmail'))$('imPicEmail').value=s.email||'';if($('imPicProgram')&&!val('imPicProgram'))$('imPicProgram').value=s.program_name||''}}});
