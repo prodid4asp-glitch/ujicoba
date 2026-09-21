@@ -511,7 +511,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn secondary full" data-action="send-reset">Kirim kode verifikasi</button>
           <div id="resetStatus" class="hint"></div>
           <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
-          <div class="field"><label>Kode verifikasi 6 digit</label><input id="resetCode" inputmode="numeric" maxlength="6"></div>
+          <div class="field"><label>Kode verifikasi 6 digit dari email</label><input id="resetCode" inputmode="numeric" maxlength="6"></div>
           <div class="field"><label>Password baru</label><input id="resetPassword" type="password"></div>
           <div class="field"><label>Ulangi password baru</label><input id="resetPassword2" type="password"></div>
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
@@ -897,7 +897,7 @@ async function login(e){
   return notice('Mesin login belum siap. Muat ulang deployment v4.7.','error');
 }
 
-async function sendReset(){const id=val('resetIdentifier')||val('loginIdentifier');if(!id)return notice('Masukkan username atau email terlebih dahulu.');$('resetStatus').textContent='Mengirim kode…';try{const r=await rpc({action:'auth.requestReset',identifier:id},20000);if(!r?.ok)throw new Error(r?.message||'Kode gagal dikirim.');$('resetStatus').textContent='Kode dikirim'+(r.destination?' ke '+r.destination:'')+'. Periksa Inbox/Spam.';notice('Kode verifikasi berhasil dikirim.','success')}catch(e){$('resetStatus').textContent=e.message;notice(e.message)}}
+async function sendReset(){const id=val('resetIdentifier')||val('loginIdentifier');if(!id)return notice('Masukkan username atau email terlebih dahulu.');const btn=document.querySelector('[data-action="send-reset"]');if(btn){btn.disabled=true;btn.textContent='Mengirim…'}$('resetStatus').textContent='Mengirim kode verifikasi melalui email…';try{const r=await rpc({action:'auth.requestReset',identifier:id},30000);if(!r?.ok)throw new Error(r?.message||'Kode gagal dikirim.');$('resetStatus').textContent='Kode 6 digit dikirim'+(r.destination?' ke '+r.destination:'')+'. Periksa Inbox dan Spam. Kode memiliki masa berlaku terbatas.';notice('Kode verifikasi berhasil diminta. Periksa email Anda.','success');let left=60;const tick=()=>{if(!btn)return;if(left<=0){btn.disabled=false;btn.textContent='Kirim ulang kode verifikasi';return}btn.textContent='Kirim ulang dalam '+left+' dtk';left--;setTimeout(tick,1000)};tick()}catch(e){$('resetStatus').textContent=e.message;notice(e.message);if(btn){btn.disabled=false;btn.textContent='Kirim kode verifikasi'}}}
 async function resetPassword(){const id=val('resetIdentifier')||val('loginIdentifier'),code=val('resetCode'),p1=$('resetPassword').value,p2=$('resetPassword2').value;if(!id||!code||!p1)return notice('Username/email, kode, dan password baru wajib diisi.');if(p1!==p2)return notice('Konfirmasi password baru tidak sama.');try{const r=await rpc({action:'auth.resetPassword',identifier:id,code,newPassword:p1},18000);if(!r?.ok)throw new Error(r?.message||'Reset gagal.');$('forgotBox').open=false;$('loginIdentifier').value=id;$('loginPassword').value='';$('resetCode').value='';$('resetPassword').value='';$('resetPassword2').value='';notice(r.message||'Password berhasil direset. Silakan login.','success');$('loginPassword').focus()}catch(e){notice(e.message)}}
 async function resume(){
   if(!S.token||!S.boot?.user){$('app').classList.add('hidden');$('loginPage').classList.remove('hidden');finishStartupV62();return;}
