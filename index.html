@@ -389,7 +389,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.74.0'
+  VERSION:'6.72.0'
 });
 
 (function(){
@@ -431,22 +431,33 @@ window.PORTAL_CONFIG=Object.freeze({
     var key=String(window.PORTAL_CONFIG.SUPABASE_ANON_KEY||'').trim();
     if(!key||key.indexOf('PASTE_')===0)throw new Error('SUPABASE_ANON_KEY belum diisi di index.html.');
     payload=Object.assign({},payload||{},{clientVersion:String(window.PORTAL_CONFIG.VERSION||'')});
-    var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},Number(timeout)||30000);
-    try{
-      var response=await post(payload,key,controller);
-      var result=await response.json().catch(function(){return null;});
-      if(response.status===401&&payload.action!=='auth.login'&&payload.action!=='auth.refresh'){
-        var refreshed=await refreshSession(key,controller);
-        if(refreshed&&refreshed.token){payload.token=refreshed.token;response=await post(payload,key,controller);result=await response.json().catch(function(){return null;});}
+    var baseTimeout=Number(timeout)||30000;
+    var readOnly=['page.load','admin.tab','auth.resume'].includes(String(payload.action||''));
+    async function attempt(ms){
+      var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},ms);
+      try{
+        var response=await post(payload,key,controller);
+        var result=await response.json().catch(function(){return null;});
+        if(response.status===401&&payload.action!=='auth.login'&&payload.action!=='auth.refresh'){
+          var refreshed=await refreshSession(key,controller);
+          if(refreshed&&refreshed.token){payload.token=refreshed.token;response=await post(payload,key,controller);result=await response.json().catch(function(){return null;});}
+        }
+        if(!response.ok)throw new Error(result&&result.message||('Supabase HTTP '+response.status));
+        if(result&&(result.token||result.refreshToken))writeSession(result);
+        return result||{ok:false,message:'Respons backend kosong.'};
+      }finally{clearTimeout(timer);}
+    }
+    try{return await attempt(baseTimeout)}
+    catch(err){
+      var transient=(err&&err.name==='AbortError')||(err instanceof TypeError&&/fetch/i.test(String(err.message||'')));
+      if(readOnly&&transient){
+        await new Promise(function(resolve){setTimeout(resolve,650)});
+        try{return await attempt(Math.max(22000,Math.min(40000,baseTimeout+10000)))}catch(err2){err=err2}
       }
-      if(!response.ok)throw new Error(result&&result.message||('Supabase HTTP '+response.status));
-      if(result&&(result.token||result.refreshToken))writeSession(result);
-      return result||{ok:false,message:'Respons backend kosong.'};
-    }catch(err){
       if(err&&err.name==='AbortError')throw new Error('Koneksi Supabase melewati batas waktu.');
-      if(err instanceof TypeError&&/fetch/i.test(String(err.message||'')))throw new Error('Edge Function portal-api belum aktif atau diblokir CORS. Pastikan fungsi sudah di-deploy dengan verify_jwt=false.');
+      if(err instanceof TypeError&&/fetch/i.test(String(err.message||'')))throw new Error('Edge Function portal-api belum aktif atau koneksi ke Supabase sedang tidak stabil.');
       throw err;
-    }finally{clearTimeout(timer);}
+    }
   }
   function parseCsv(text){
     var rows=[],row=[],field='',quoted=false;
@@ -504,7 +515,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.74.0</div>
+      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -688,7 +699,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.74.0</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.72.0</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -901,7 +912,7 @@ async function resume(){
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');markNav();
     // v6.74.0: cache-first saat F5/resume. Tampilan terakhir muncul seketika;
     // data yang sudah usang disegarkan di belakang layar tanpa memblokir pengguna.
-    if(S.page==='admin')await loadAdminTab(S.adminTab,!hadCache);else await loadPage(S.page,!hadCache);
+    if(S.page==='admin'){const adminCached=!!S.workspace.adminTabs?.[S.adminTab];await loadAdminTab(S.adminTab,!adminCached)}else await loadPage(S.page,!hadCache);
     schedulePrefetchV52();
   }catch(e){
     console.error('Session restore failed',e);
@@ -929,7 +940,7 @@ async function loadPage(page,force=false){
   if(page==='admin'){
     renderAdminShell();
     const cachedTab=S.workspace.adminTabs?.[S.adminTab];
-    if(cachedTab&&!force){S.adminData=cachedTab.data;S.adminRefs=cachedTab.refs||{};renderAdminTab(S.adminTab,S.adminData);rememberViewV52('admin',{data:S.adminData,refs:S.adminRefs});loadAdminTab(S.adminTab,true).catch(()=>{});return;}
+    if(cachedTab&&!force){S.adminData=cachedTab.data;S.adminRefs=cachedTab.refs||{};renderAdminTab(S.adminTab,S.adminData);rememberViewV52('admin',{data:S.adminData,refs:S.adminRefs});return;}
     await loadAdminTab(S.adminTab,force);return;
   }
   const cached=hydrateBundleV52(page,S.workspace.pages?.[page]);
@@ -1916,16 +1927,16 @@ function renderAdminShell(){const tabs=[['config','Konfigurasi'],['academic_peri
 async function loadAdminTab(tab,force=false){
  S.adminTab=tab;save();document.querySelectorAll('[data-admin-tab]').forEach(x=>x.classList.toggle('active',x.dataset.adminTab===tab));
  S.workspace.adminTabs=S.workspace.adminTabs||{};const cached=S.workspace.adminTabs[tab];
- if(!force&&cached){S.adminData=cached.data;S.adminRefs=cached.refs||{};renderAdminTab(tab,S.adminData);rememberViewV52('admin',{data:S.adminData,refs:S.adminRefs});if(Date.now()-(cached.syncedAt||0)>45000)loadAdminTab(tab,true);return;}
+ if(!force&&cached){S.adminData=cached.data;S.adminRefs=cached.refs||{};renderAdminTab(tab,S.adminData);rememberViewV52('admin',{data:S.adminData,refs:S.adminRefs});return;}
  if(!$('adminPane'))return;
  if(!cached)$('adminPane').innerHTML='Memuat data '+esc(tab)+'…';
  try{const r=await fetchAdminTabV52(tab,force);if(S.page==='admin'&&S.adminTab===tab){S.adminData=r.data;S.adminRefs=r.refs||{};renderAdminTab(tab,r.data);rememberViewV52('admin',{data:S.adminData,refs:S.adminRefs});}}
- catch(e){if(!cached&&$('adminPane'))$('adminPane').innerHTML=`<div class="alert">${esc(e.message)}</div>`;else toast('Pembaruan data '+tab+' gagal: '+e.message,true)}
+ catch(e){const msg=String(e?.message||e||'');if(!cached&&$('adminPane'))$('adminPane').innerHTML=`<div class="alert">${esc(msg)}</div>`;else if(!/melewati batas waktu|timeout/i.test(msg))toast('Pembaruan data '+tab+' gagal: '+msg,true)}
 }
 async function fetchAdminTabV52(tab,fresh=false){
  S.fetchingAdmin=S.fetchingAdmin||{};if(S.fetchingAdmin[tab])return S.fetchingAdmin[tab];
  const tokenAtStart=S.token,userAtStart=S.boot?.user?.email||'';
- S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},16000);if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;scheduleDurableSaveV61();return item})();
+ S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},28000);if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;scheduleDurableSaveV61();return item})();
  try{return await S.fetchingAdmin[tab]}finally{delete S.fetchingAdmin[tab]}
 };
 
@@ -2111,7 +2122,7 @@ window.addEventListener('portal:session',ev=>{const r=ev?.detail||{};if(r.token)
 async function ensureSupabaseRealtimeV630(){
  // v6.74.0: 1000+ mahasiswa tidak membuka WebSocket realtime masing-masing.
  // Library supabase-js juga diload lazy hanya untuk admin/dosen/monitor.
- const role=S.boot?.user?.role_id||'';if(role==='student')return;
+ const role=S.boot?.user?.role_id||'';if(role==='student'||role==='admin')return;
  if(!S.token||supabaseRealtimeChannelV630)return;
  const lib=window.supabase||await loadSupabaseRealtimeLibraryV674();if(!lib)return;
  const c=window.PORTAL_CONFIG,key=String(c.SUPABASE_ANON_KEY||'');if(!key||key.startsWith('PASTE_'))return;
