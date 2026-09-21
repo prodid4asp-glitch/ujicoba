@@ -1095,7 +1095,7 @@ function renderDashboard(d){
  (d.alerts||[]).forEach(a=>h+=`<div class="alert">${esc(a)}</div>`);
  if((period.items||[]).length){
    const rows=period.items.map((x,i)=>({no:i+1,kegiatan:x.label||'-',mulai:x.start||'',selesai:x.end||'',status:x.open?'Aktif':'Tidak Aktif'}));
-   h+=`<section class="section dashboard-timeline"><div class="sectionhead"><div><h3>Periode & Timeline Akademik</h3><p>Semester ${esc(period.semester||'-')} · Tahun Akademik ${esc(period.academic_year||'-')}</p></div></div>${table(rows,[['no','No.'],['kegiatan','Kegiatan'],['mulai','Mulai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['selesai','Selesai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['status','Status',v=>statusBadge(v==='Aktif'?'ACTIVE':'REJECTED')]])}</section>`;
+   h+=`<section class="section dashboard-timeline"><div class="sectionhead"><div><h3>Periode & Timeline Akademik</h3><p>Semester ${esc(period.semester||'-')} · Tahun Akademik ${esc(period.academic_year||'-')}</p></div></div>${table(rows,[['no','No.'],['kegiatan','Kegiatan'],['mulai','Mulai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['selesai','Selesai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['status','Status',v=>statusBadge(v==='Aktif'?'ACTIVE':'CLOSED')]])}</section>`;
  }
  const labels={submitted_at:'Waktu Pengajuan',uploaded_at:'Waktu Unggah',created_at:'Waktu',status:'Status',stage:'Tahap',student_name:'Mahasiswa',lecturer_name:'Dosen'};
  const timelineCols=Object.keys((d.timeline||[])[0]||{}).slice(0,5).map(k=>[k,labels[k]||k,k==='status'?statusBadge:k==='stage'?(v)=>esc(stageLabel(v)):undefined]);
