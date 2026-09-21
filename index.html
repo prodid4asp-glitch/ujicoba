@@ -355,7 +355,7 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
 .letter-table-v714 td:last-child,.letter-table-v714 th:last-child{text-align:center}
 @media(max-width:760px){.letter-filter-v714{grid-template-columns:1fr 1fr}.letter-filter-v714>.field:first-child{grid-column:1/-1}}
 
-/* v6.72.9: sidebar benar-benar tetap pada viewport; hanya isi utama yang bergulir. */
+/* v6.74.0: sidebar benar-benar tetap pada viewport; hanya isi utama yang bergulir. */
 @media(min-width:761px){
   .app,.app.collapsed{display:block}
   .sidebar{position:fixed!important;top:0;left:0;bottom:0;width:260px;height:100dvh;overflow-y:auto;overscroll-behavior:contain;z-index:20}
@@ -368,7 +368,7 @@ body{font-size:13px;line-height:1.45}.login-visual h2{font-size:32px}.auth h2{fo
   body.mobile-sidebar-open{overflow:hidden;touch-action:none}
   body.mobile-sidebar-open .sidebar{touch-action:auto}
 }
-/* v6.72.9: portal memakai scroll internal agar sidebar tidak ikut terdorong ketika di-embed di Google Sites. */
+/* v6.74.0: portal memakai scroll internal agar sidebar tidak ikut terdorong ketika di-embed di Google Sites. */
 html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hidden!important}
 #app.app:not(.hidden),#app.app.collapsed:not(.hidden){height:100dvh;min-height:0;overflow:hidden!important}
 #app.app:not(.hidden) .main{height:100dvh;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scroll-behavior:smooth}
@@ -380,7 +380,6 @@ html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hid
 </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /*
  * KONFIGURASI FRONTEND MANDIRI
@@ -390,7 +389,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.72.9'
+  VERSION:'6.74.0'
 });
 
 (function(){
@@ -414,10 +413,11 @@ window.PORTAL_CONFIG=Object.freeze({
     window.dispatchEvent(new CustomEvent('portal:session',{detail:result}));
   }
   async function post(payload,key,controller){
-    var token=String(payload.token||'').trim(),publicAuth=payload.action==='auth.login'||payload.action==='auth.refresh';
-    // Login/refresh dikirim sebagai simple CORS request. Ini menghindari kegagalan
-    // preflight pada GitHub Pages; autentikasi action lain tetap memakai JWT.
-    var headers=publicAuth?{'Content-Type':'text/plain;charset=UTF-8'}:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+(token||key)};
+    // v6.74.0: seluruh request memakai simple CORS POST. Token tetap dikirim di body
+    // HTTPS dan diverifikasi oleh portal-api. Ini menghapus preflight OPTIONS untuk
+    // setiap perpindahan menu, yang sebelumnya menggandakan round-trip GitHub -> Supabase.
+    // Edge Function portal-api harus tetap di-deploy dengan verify_jwt=false.
+    var headers={'Content-Type':'text/plain;charset=UTF-8'};
     return fetch(apiUrl(),{method:'POST',headers:headers,body:JSON.stringify(payload),signal:controller.signal,cache:'no-store',mode:'cors'});
   }
   function refreshSession(key,controller){
@@ -504,7 +504,7 @@ window.PORTAL_CONFIG=Object.freeze({
           <button type="button" class="btn primary full" data-action="reset-password">Reset password</button>
         </div>
       </details>
-      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.9</div>
+      <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.74.0</div>
     </div>
   </div>
   <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
@@ -688,7 +688,7 @@ window.PORTAL_CONFIG=Object.freeze({
   <aside id="sidebar" class="sidebar">
     <div class="sidebrand"><div class="mark">TA</div><div class="brandtext"><b id="brandTitle">Skripsi & Magang</b><small id="brandOrg"></small></div></div>
     <nav id="nav" class="nav"></nav>
-    <div class="sidefoot"><span id="version">Versi 6.72.9</span></div>
+    <div class="sidefoot"><span id="version">Versi 6.74.0</span></div>
   </aside>
   <main class="main">
     <header class="top">
@@ -727,7 +727,15 @@ function durableOpenV61(){return new Promise((resolve,reject)=>{try{if(!window.i
 async function durableReadV61(){try{const db=await durableOpenV61();return await new Promise((resolve,reject)=>{const tx=db.transaction('session','readonly'),req=tx.objectStore('session').get('active');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)});}catch(e){return null}}
 async function durableWriteV61(payload){try{const db=await durableOpenV61();await new Promise((resolve,reject)=>{const tx=db.transaction('session','readwrite');tx.objectStore('session').put(payload,'active');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});return true}catch(e){return false}}
 async function durableDeleteV61(){try{const db=await durableOpenV61();await new Promise((resolve,reject)=>{const tx=db.transaction('session','readwrite');tx.objectStore('session').delete('active');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});}catch(e){}}
-function scheduleDurableSaveV61(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=setTimeout(()=>{if(!S.token)return;durableWriteV61({token:S.token,refreshToken:S.refreshToken,boot:S.boot,expiresAt:S.expiresAt,page:S.page,adminTab:S.adminTab,collapsed:S.collapsed,lastView:S.lastView,workspace:S.workspace,savedAt:Date.now()})},80)}
+function durableWorkspaceV674(){
+ const role=S.boot?.user?.role_id||'';
+ // Data admin/monitor dapat berisi ribuan kartu. Jangan serialisasi seluruh workspace
+ // ke IndexedDB pada setiap perubahan; itu membuat UI berat dan F5 lambat.
+ if(['admin','monitor'].includes(role))return {pages:S.workspace.pages?.dashboard?{dashboard:S.workspace.pages.dashboard}:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:S.workspace.syncedAt||0,pageSynced:S.workspace.pages?.dashboard?{dashboard:S.workspace.pageSynced?.dashboard||0}:{},adminSynced:0};
+ const pages={};for(const key of ['dashboard',S.page])if(key&&S.workspace.pages?.[key])pages[key]=S.workspace.pages[key];
+ return {pages,shared:{},admin:null,adminTabs:{},errors:{},syncedAt:S.workspace.syncedAt||0,pageSynced:Object.fromEntries(Object.keys(pages).map(k=>[k,S.workspace.pageSynced?.[k]||0])),adminSynced:0};
+}
+function scheduleDurableSaveV61(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=setTimeout(()=>{if(!S.token)return;const role=S.boot?.user?.role_id||'',lastView=['admin','monitor'].includes(role)?(S.lastView?{page:S.lastView.page,adminTab:S.lastView.adminTab,savedAt:S.lastView.savedAt}:null):S.lastView;durableWriteV61({token:S.token,refreshToken:S.refreshToken,boot:S.boot,expiresAt:S.expiresAt,page:S.page,adminTab:S.adminTab,collapsed:S.collapsed,lastView,workspace:durableWorkspaceV674(),savedAt:Date.now()})},600)}
 async function restoreDurableSessionV61(){const rec=await durableReadV61();if(S.token&&S.boot?.user){if(!S.refreshToken&&rec?.refreshToken)S.refreshToken=String(rec.refreshToken);if(rec?.workspace)S.workspace=rec.workspace;if(!S.lastView&&rec?.lastView)S.lastView=rec.lastView;return true}if(!rec||!rec.token||!rec.boot?.user){if(rec)durableDeleteV61();return false}S.token=String(rec.token);S.refreshToken=String(rec.refreshToken||'');S.boot=rec.boot;S.expiresAt=Number(rec.expiresAt);S.page=rec.page||'dashboard';S.adminTab=rec.adminTab||'config';S.collapsed=!!rec.collapsed;S.lastView=rec.lastView||null;if(rec.workspace)S.workspace=rec.workspace;return true}
 function save(){storeSet(K.token,S.token||'');storeSet(K.refresh,S.refreshToken||'');storeSet(K.boot,JSON.stringify(S.boot||null));storeSet(K.page,S.page||'dashboard');storeSet(K.admin,S.adminTab||'config');storeSet(K.collapsed,S.collapsed?'1':'0');storeSet(K.expires,S.expiresAt||'');scheduleDurableSaveV61()}
 function clearSession(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=0;S.token='';S.refreshToken='';S.boot=null;S.expiresAt=0;S.cache={};S.workspace={pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0};S.lastView=null;Object.values(K).forEach(storeRemove);try{sessionStorage.clear()}catch(e){}try{localStorage.removeItem('sb-'+String(window.PORTAL_CONFIG?.SUPABASE_URL||'').split('//')[1]?.split('.')[0]+'-auth-token')}catch(e){}durableDeleteV61()}
@@ -769,7 +777,10 @@ function sessionExpired(){clearSession();showLogin('Sesi login berakhir. Silakan
 function showLogin(msg,type='error'){clearSession();$('app').classList.add('hidden');$('loginPage').classList.remove('hidden');finishStartupV62();if(msg)notice(msg,type)}
 function hydrateBundleV52(page,bundle){return bundle?Object.assign({},bundle):null}
 function rememberViewV52(page,payload){
-  S.lastView={page:page,adminTab:S.adminTab,payload:payload,savedAt:Date.now()};
+  const role=S.boot?.user?.role_id||'';
+  // Untuk admin/monitor simpan posisi halaman saja. Payload besar tetap ada di memori,
+  // tetapi tidak diserialisasi berulang ke sessionStorage.
+  S.lastView=['admin','monitor'].includes(role)?{page:page,adminTab:S.adminTab,payload:null,savedAt:Date.now()}:{page:page,adminTab:S.adminTab,payload:payload,savedAt:Date.now()};
   sessionJsonSet(K.lastView,S.lastView);
   scheduleDurableSaveV61();
 }
@@ -803,7 +814,8 @@ async function fetchPageV52(page,fresh=false){
   if(S.fetchingPages[page])return S.fetchingPages[page];
   const tokenAtStart=S.token,userAtStart=S.boot?.user?.email||'';
   S.fetchingPages[page]=(async()=>{
-    const r=await rpc({action:'page.load',page,token:tokenAtStart,fresh:!!fresh},30000);
+    const role=S.boot?.user?.role_id||'';const pageTimeout=role==='student'?18000:(['supervisor','guidance','documents','proposal_seminar','thesis_exam'].includes(page)?35000:26000);
+    const r=await rpc({action:'page.load',page,token:tokenAtStart,fresh:!!fresh},pageTimeout);
     if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');
     if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(errorTextV635(r?.message,'Data halaman gagal dimuat.'))}
     S.workspace.pages=S.workspace.pages||{};S.workspace.pageSynced=S.workspace.pageSynced||{};
@@ -887,9 +899,9 @@ async function resume(){
     if(!restored?.ok){if(restored?.code==='SESSION_EXPIRED')return showLogin('Sesi 24 jam telah berakhir. Silakan masuk kembali.');throw new Error(restored?.message||'Sesi tidak dapat dipulihkan.');}
     S.token=restored.token||S.token;S.refreshToken=restored.refreshToken||S.refreshToken;S.boot=restored.boot||S.boot;S.expiresAt=Number(restored.sessionExpiresAt)||S.expiresAt||Date.now()+SESSION_TTL_MS;save();
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');markNav();
-    // Halaman terakhir selalu dibaca ulang agar F5 menampilkan data Google Sheets terbaru.
-    if(S.page==='admin')await loadAdminTab(S.adminTab,true);else await loadPage(S.page,true);
-    refreshBootV52();
+    // v6.74.0: cache-first saat F5/resume. Tampilan terakhir muncul seketika;
+    // data yang sudah usang disegarkan di belakang layar tanpa memblokir pengguna.
+    if(S.page==='admin')await loadAdminTab(S.adminTab,!hadCache);else await loadPage(S.page,!hadCache);
     schedulePrefetchV52();
   }catch(e){
     console.error('Session restore failed',e);
@@ -909,7 +921,7 @@ async function refreshPageV52(page,showError=true){
     // Respons terbaru tetap masuk workspace dan diterapkan setelah form ditutup/disimpan.
     if(S.page===page&&!pageComposerOpenV64(page)){const b=hydrateBundleV52(page,bundle);renderPage(page,b);rememberViewV52(page,b);}
     return bundle;
-  }catch(e){if(showError)toast('Pembaruan '+(LABEL[page]||page)+' gagal: '+e.message,true);throw e}
+  }catch(e){const msg=String(e?.message||e||'');if(showError&&!/melewati batas waktu|timeout/i.test(msg))toast('Pembaruan '+(LABEL[page]||page)+' gagal: '+msg,true);throw e}
 }
 async function loadPage(page,force=false){
   closeUserMenuV670();
@@ -923,7 +935,8 @@ async function loadPage(page,force=false){
   const cached=hydrateBundleV52(page,S.workspace.pages?.[page]);
   if(cached){renderPage(page,cached);rememberViewV52(page,cached);}
   if(!cached)$('content').innerHTML=`<div class="card"><h3>Memuat ${esc(LABEL[page]||page)}…</h3><p class="hint">Mengambil data halaman ini.</p></div>`;
-  if(cached&&!force&&!pageIsFreshV52(page,300000)){refreshPageV52(page,false).catch(()=>{});}
+  const freshness=S.boot?.user?.role_id==='student'?60000:180000;
+  if(cached&&!force&&!pageIsFreshV52(page,freshness)){refreshPageV52(page,false).catch(()=>{});}
   else if(force||!cached){try{await refreshPageV52(page,!cached)}catch(e){if(!cached)$('content').innerHTML=`<div class="card"><div class="alert">${esc(errorTextV635(e,'Data halaman gagal dimuat.'))}</div><button class="btn primary" data-action="refresh" style="margin-top:12px">Coba lagi</button></div>`;}}
   schedulePrefetchV52();
 }
@@ -1177,7 +1190,7 @@ function applyInternshipBundleV622(bundle,revision){
 function setInternshipLiveStatusV622(message,state=''){const el=$('internshipLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'')}
 function internshipRealtimeBusyV622(){return pageComposerOpenV64('internship')||$('modalBack')?.classList?.contains('show')||$('loader')?.classList?.contains('show')}
 function stopInternshipRealtimeV622(){clearTimeout(startInternshipRealtimeV622._timer);startInternshipRealtimeV622._timer=0}
-function startInternshipRealtimeV622(delay=INTERNSHIP_REALTIME_INTERVAL_V622){stopInternshipRealtimeV622();if(!S.token||S.page!=='internship')return;startInternshipRealtimeV622._timer=setTimeout(pollInternshipRealtimeV622,Math.max(1000,Number(delay)||INTERNSHIP_REALTIME_INTERVAL_V622))}
+function startInternshipRealtimeV622(delay=INTERNSHIP_REALTIME_INTERVAL_V622){stopInternshipRealtimeV622();if(!S.token||S.page!=='internship')return;setInternshipLiveStatusV622(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollInternshipRealtimeV622(){
  startInternshipRealtimeV622._timer=0;if(!S.token||S.page!=='internship')return;
  if(document.hidden||internshipRealtimeBusyV622()||pollInternshipRealtimeV622._busy){startInternshipRealtimeV622();return}
@@ -1454,11 +1467,7 @@ function setSupervisorLiveStatusV621(message,state=''){
  const el=$('supervisorLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'');
 }
 function stopSupervisorRealtimeV621(){clearTimeout(startSupervisorRealtimeV621._timer);startSupervisorRealtimeV621._timer=0}
-function startSupervisorRealtimeV621(delay=SUPERVISOR_REALTIME_INTERVAL_V621){
- stopSupervisorRealtimeV621();
- if(!S.token||S.page!=='supervisor'||!['student','lecturer','admin','monitor'].includes(S.boot?.user?.role_id))return;
- startSupervisorRealtimeV621._timer=setTimeout(pollSupervisorRealtimeV621,Math.max(1000,Number(delay)||SUPERVISOR_REALTIME_INTERVAL_V621));
-}
+function startSupervisorRealtimeV621(delay=SUPERVISOR_REALTIME_INTERVAL_V621){stopSupervisorRealtimeV621();if(!S.token||S.page!=='supervisor')return;setSupervisorLiveStatusV621(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollSupervisorRealtimeV621(){
  startSupervisorRealtimeV621._timer=0;
  if(!S.token||S.page!=='supervisor'||!['student','lecturer','admin','monitor'].includes(S.boot?.user?.role_id))return;
@@ -1649,10 +1658,7 @@ function setDocumentLiveStatusV620(message,state=''){
  const el=$('documentLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'');
 }
 function stopDocumentsRealtimeV620(){clearTimeout(startDocumentsRealtimeV620._timer);startDocumentsRealtimeV620._timer=0}
-function startDocumentsRealtimeV620(delay=DOCUMENT_REALTIME_INTERVAL_V620){
- stopDocumentsRealtimeV620();if(!S.token||S.page!=='documents')return;
- startDocumentsRealtimeV620._timer=setTimeout(pollDocumentsRealtimeV620,Math.max(1000,Number(delay)||DOCUMENT_REALTIME_INTERVAL_V620));
-}
+function startDocumentsRealtimeV620(delay=DOCUMENT_REALTIME_INTERVAL_V620){stopDocumentsRealtimeV620();if(!S.token||S.page!=='documents')return;setDocumentLiveStatusV620(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollDocumentsRealtimeV620(){
  startDocumentsRealtimeV620._timer=0;
  if(!S.token||S.page!=='documents')return;
@@ -2094,21 +2100,45 @@ document.addEventListener('visibilitychange',()=>{
  if(S.page==='internship')startInternshipRealtimeV622(delay);
 });
 window.addEventListener('beforeunload',()=>{stopDocumentsRealtimeV620();stopSupervisorRealtimeV621();stopInternshipRealtimeV622();if(S.token)save()});
-let supabaseRealtimeClientV630=null,supabaseRealtimeChannelV630=null,supabaseRealtimeTimerV630=null;
-window.addEventListener('portal:session',ev=>{const r=ev?.detail||{};if(r.token)S.token=String(r.token);if(r.refreshToken)S.refreshToken=String(r.refreshToken);if(r.sessionExpiresAt)S.expiresAt=Number(r.sessionExpiresAt);if(r.boot?.user)S.boot=r.boot;save();if(supabaseRealtimeClientV630&&r.token)supabaseRealtimeClientV630.realtime.setAuth(String(r.token));});
-function ensureSupabaseRealtimeV630(){
- if(!S.token||supabaseRealtimeChannelV630||!window.supabase)return;
- const c=window.PORTAL_CONFIG,key=String(c.SUPABASE_ANON_KEY||'');if(!key||key.startsWith('PASTE_'))return;
- supabaseRealtimeClientV630=window.supabase.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
- supabaseRealtimeClientV630.realtime.setAuth(S.token);
- supabaseRealtimeChannelV630=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||'user'))
-  .on('postgres_changes',{event:'*',schema:'public',table:'portal_records'},scheduleSupabaseRefreshV632)
-  .on('postgres_changes',{event:'*',schema:'public',table:'portal_academic_schedules'},scheduleSupabaseRefreshV632)
-  .on('postgres_changes',{event:'*',schema:'public',table:'portal_desk_reviews'},scheduleSupabaseRefreshV632)
-  .on('postgres_changes',{event:'*',schema:'public',table:'portal_config'},scheduleSupabaseRefreshV632).subscribe();
+let supabaseRealtimeClientV630=null,supabaseRealtimeChannelV630=null,supabaseRealtimeTimerV630=null,supabaseLoaderV674=null;
+function loadSupabaseRealtimeLibraryV674(){
+ if(window.supabase)return Promise.resolve(window.supabase);
+ if(supabaseLoaderV674)return supabaseLoaderV674;
+ supabaseLoaderV674=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';script.async=true;script.onload=()=>resolve(window.supabase);script.onerror=()=>reject(new Error('Library realtime gagal dimuat.'));document.head.appendChild(script)}).catch(e=>{supabaseLoaderV674=null;console.warn(e.message||e);return null});
+ return supabaseLoaderV674;
 }
-function scheduleSupabaseRefreshV632(){clearTimeout(supabaseRealtimeTimerV630);supabaseRealtimeTimerV630=setTimeout(()=>refreshCurrentV52().catch(()=>{}),280)}
-ensureSupabaseRealtimeV630();setInterval(ensureSupabaseRealtimeV630,5000);
+window.addEventListener('portal:session',ev=>{const r=ev?.detail||{};if(r.token)S.token=String(r.token);if(r.refreshToken)S.refreshToken=String(r.refreshToken);if(r.sessionExpiresAt)S.expiresAt=Number(r.sessionExpiresAt);if(r.boot?.user)S.boot=r.boot;save();if(supabaseRealtimeClientV630&&r.token)supabaseRealtimeClientV630.realtime.setAuth(String(r.token));});
+async function ensureSupabaseRealtimeV630(){
+ // v6.74.0: 1000+ mahasiswa tidak membuka WebSocket realtime masing-masing.
+ // Library supabase-js juga diload lazy hanya untuk admin/dosen/monitor.
+ const role=S.boot?.user?.role_id||'';if(role==='student')return;
+ if(!S.token||supabaseRealtimeChannelV630)return;
+ const lib=window.supabase||await loadSupabaseRealtimeLibraryV674();if(!lib)return;
+ const c=window.PORTAL_CONFIG,key=String(c.SUPABASE_ANON_KEY||'');if(!key||key.startsWith('PASTE_'))return;
+ supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
+ supabaseRealtimeClientV630.realtime.setAuth(S.token);
+ const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
+ const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_thesis_exam_scores','portal_desk_reviews','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
+ for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
+ supabaseRealtimeChannelV630=ch.subscribe();
+}
+function scheduleSupabaseRefreshV632(payload){
+ const table=String(payload?.table||''),page=S.page;if(document.hidden)return;
+ const relevant=!table||
+  (['portal_supervisor_requests','portal_theses','portal_student_periods'].includes(table)&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam'].includes(page))||
+  (table==='portal_guidance'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
+  (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
+  (table==='portal_academic_schedules'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
+  (table==='portal_thesis_exam_scores'&&page==='thesis_exam')||
+  (table==='portal_desk_reviews'&&['proposal_seminar','thesis_exam'].includes(page))||
+  (table==='portal_research_letters'&&['dashboard','letters'].includes(page))||
+  (table==='portal_internship_applications'&&['dashboard','internship'].includes(page))||
+  (table==='portal_config'&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam','admin'].includes(page))||
+  (table==='portal_records'&&['profile','internship','proposal_seminar','thesis_exam'].includes(page));
+ if(!relevant||pageComposerOpenV64(page))return;
+ clearTimeout(supabaseRealtimeTimerV630);supabaseRealtimeTimerV630=setTimeout(()=>refreshCurrentV52().catch(e=>console.warn('Realtime refresh dilewati:',e?.message||e)),2800);
+}
+ensureSupabaseRealtimeV630();setInterval(ensureSupabaseRealtimeV630,60000);
 window.addEventListener('portal:csv',()=>{if(S.token&&S.page==='dashboard'&&S.workspace.pages?.dashboard?.dashboard)renderDashboard(S.workspace.pages.dashboard.dashboard)});
 window.addEventListener('error',e=>{console.error(e.error||e.message);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Terjadi kesalahan tampilan. Portal dikembalikan ke halaman login.');else toast('Terjadi kesalahan tampilan: '+(e.message||'unknown'),true)}catch(_){}});
 window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Koneksi portal gagal dipulihkan. Silakan login kembali.')}catch(_){}});
