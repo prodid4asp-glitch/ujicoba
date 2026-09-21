@@ -389,7 +389,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.72.0'
+  VERSION:'6.72.0' // build 20260921-1840
 });
 
 (function(){
@@ -2133,7 +2133,7 @@ async function ensureSupabaseRealtimeV630(){
  supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
  supabaseRealtimeClientV630.realtime.setAuth(S.token);
  const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
- const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_thesis_exam_scores','portal_desk_reviews','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
+ const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_thesis_exam_scores','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
  for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
  supabaseRealtimeChannelV630=ch.subscribe();
 }
@@ -2145,7 +2145,6 @@ function scheduleSupabaseRefreshV632(payload){
   (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
   (table==='portal_academic_schedules'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_thesis_exam_scores'&&page==='thesis_exam')||
-  (table==='portal_desk_reviews'&&['proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_research_letters'&&['dashboard','letters'].includes(page))||
   (table==='portal_internship_applications'&&['dashboard','internship'].includes(page))||
   (table==='portal_config'&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam','admin'].includes(page))||
