@@ -1030,11 +1030,12 @@ function menteeGroups661(roster,records){
   const memberships=new Set(ps.map(p=>p.academic_year+'|'+p.semester));
   const periodKey=r=>{
    const byId=ps.find(p=>r?.period_id&&String(p.period_id)===String(r.period_id));if(byId)return byId.academic_year+'|'+byId.semester;
-   if(r?.academic_year&&r?.semester)return String(r.academic_year)+'|'+String(r.semester).replace('Ganjil','Gasal');
-   // Data lama sering belum memiliki period_id. Jika mahasiswa hanya memiliki satu
-   // periode yang berlaku, tempelkan datanya ke kartu periode tersebut agar data
-   // yang sebenarnya sudah ada tidak tampil sebagai "Belum ada data".
+   // Data jadwal lama sering belum memiliki period_id. Jika mahasiswa hanya memiliki
+   // satu periode yang berlaku, periode mahasiswa menjadi sumber utama. Ini mencegah
+   // jadwal yang tanggalnya berada di tahun akademik berikutnya membuat kartu duplikat
+   // "Periode belum ditetapkan / data belum tertaut periode".
    if(!r?.period_id&&ps.length===1)return ps[0].academic_year+'|'+ps[0].semester;
+   if(r?.academic_year&&r?.semester)return String(r.academic_year)+'|'+String(r.semester).replace('Ganjil','Gasal');
    return recordPeriod661(r);
   };
   for(const p of ps){const key=p.academic_year+'|'+p.semester;
