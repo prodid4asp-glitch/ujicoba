@@ -379,6 +379,159 @@ html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hid
   #app.app:not(.hidden),#app.app.collapsed:not(.hidden){height:100dvh}
   #app.app:not(.hidden) .main{height:100dvh;overflow-y:auto;overscroll-behavior:contain}
 }
+
+/* build 20260922-1455: header Ujian - Status dan Unduh dipisah */
+.schedule-card-head.exam-head{
+  grid-template-columns:
+    minmax(180px,1.15fr)
+    minmax(145px,.82fr)
+    minmax(92px,.52fr)
+    minmax(48px,.28fr)
+    minmax(210px,1.18fr)
+    minmax(82px,.46fr)
+    minmax(178px,.90fr);
+}
+.schedule-card-head.exam-head .schedule-exam-status{min-width:0}
+.schedule-card-head.exam-head .schedule-exam-download{min-width:0}
+.schedule-exam-download .exam-download-actions{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+}
+.schedule-exam-download .exam-download-actions .btn{
+  padding:4px 6px;
+  font-size:10.5px;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.schedule-mentee-card .schedule-card-head.exam-head{
+  grid-template-columns:
+    minmax(150px,1fr)
+    minmax(88px,.58fr)
+    minmax(46px,.26fr)
+    minmax(205px,1.18fr)
+    minmax(80px,.46fr)
+    minmax(178px,.92fr);
+}
+@media(max-width:1180px){
+  .schedule-card-head.exam-head{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .schedule-card-head.exam-head>.schedule-meta:first-child{grid-column:1/-1}
+  .schedule-mentee-card .schedule-card-head.exam-head{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:760px){
+  .schedule-card-head.exam-head,
+  .schedule-mentee-card .schedule-card-head.exam-head{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .schedule-exam-download .exam-download-actions{flex-wrap:wrap}
+}
+
+
+/* build 20260922-1550: tabel mobile responsif + horizontal swipe */
+@media(max-width:760px){
+  html,body{
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  .main,.content,.card,.section,.monitor-block,.monitor-body,
+  .schedule-card,.schedule-assessment,.readonly-detail{
+    min-width:0;
+    max-width:100%;
+  }
+
+  /* Semua pembungkus tabel dapat digeser kanan-kiri di HP. */
+  .tablewrap,
+  .monitor-table-scroll,
+  .schedule-tablewrap,
+  .score-table{
+    display:block;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto !important;
+    overflow-y:visible;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-inline:contain;
+    touch-action:pan-x pan-y;
+    scrollbar-width:thin;
+  }
+
+  /* Pada monitoring, scroll horizontal ditangani wrapper terluar agar tidak ada
+     dua scrollbar horizontal bertumpuk. */
+  .monitor-table-scroll{
+    overflow-x:auto !important;
+    overflow-y:auto;
+  }
+  .monitor-table-scroll .tablewrap{
+    width:max-content;
+    min-width:100%;
+    max-width:none;
+    overflow:visible !important;
+  }
+
+  /* Jangan mengecilkan tabel sampai kolom sulit dibaca; lebarkan lalu swipe. */
+  .tablewrap>.table,
+  .monitor-table-scroll .table,
+  .schedule-tablewrap .table,
+  .score-table>.table{
+    width:max-content;
+    min-width:760px;
+    max-width:none;
+    table-layout:auto;
+  }
+
+  /* Tabel sangat lebar tetap nyaman dibaca di layar kecil. */
+  .table th,.table td{
+    padding:8px 9px;
+    font-size:11.5px;
+    line-height:1.4;
+    vertical-align:top;
+  }
+  .table th{
+    white-space:nowrap;
+  }
+  .table td{
+    max-width:280px;
+    overflow-wrap:anywhere;
+  }
+  .table td[data-col="actions"],
+  .table th[data-col="actions"],
+  .table .actions{
+    white-space:nowrap;
+  }
+
+  /* Scrollbar tipis namun tetap terlihat sebagai petunjuk bahwa tabel bisa digeser. */
+  .tablewrap::-webkit-scrollbar,
+  .monitor-table-scroll::-webkit-scrollbar,
+  .schedule-tablewrap::-webkit-scrollbar,
+  .score-table::-webkit-scrollbar{
+    height:7px;
+  }
+  .tablewrap::-webkit-scrollbar-thumb,
+  .monitor-table-scroll::-webkit-scrollbar-thumb,
+  .schedule-tablewrap::-webkit-scrollbar-thumb,
+  .score-table::-webkit-scrollbar-thumb{
+    background:rgba(71,84,103,.35);
+    border-radius:999px;
+  }
+
+  /* Jangan biarkan tombol aksi membuat tabel terlalu tinggi di HP. */
+  .table .actions{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:4px;
+  }
+  .table .btn.small{
+    padding:5px 7px;
+    font-size:10.5px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1761,14 +1914,56 @@ function renderAcademicSchedule(b,eventType){
  $('content').innerHTML=`<section class="section">${b.canManage?`<div class="sectionhead"><span></span><div class="toolbar"><button class="btn primary" data-action="schedule-add">+ Tambah Jadwal</button><button class="btn secondary" data-action="schedule-bulk" data-type="${attr(eventType)}">Bulk CSV</button></div></div>`:''}${periodFilter}${scheduleCards}</section>${isProposal?`<section class="section"><div class="sectionhead"><div><h3>Saran Masukan Dosen dan Tanggapan Mahasiswa</h3><p>Masukan dosen ditampilkan bersama tanggapan mahasiswa pada jadwal yang sama.</p></div></div>${reviewTable}</section>`:''}`;restoreDetailStatesV632($('content'));
 }
 function scoreLetterV639(value){const n=Number(value);if(!Number.isFinite(n))return'-';return n>=86?'A':n>=80?'A-':n>=75?'B+':n>=70?'B':n>=66?'B-':n>=61?'C+':n>=56?'C':n>=41?'D':'E'}
-function scheduleCardsV642(rows,b,isProposal,downloadLabel,actions){const template=document.createElement('template');template.innerHTML=scheduleCardsV641(rows,b,isProposal,downloadLabel,actions);S.cache.scheduleCollapsedV642=S.cache.scheduleCollapsedV642||{};template.content.querySelectorAll('.schedule-card').forEach((card,i)=>{const row=rows[i]||{},key=`${isProposal?'PROPOSAL':'EXAM'}:${row.schedule_id||i}`,hasSaved=Object.prototype.hasOwnProperty.call(S.cache.scheduleCollapsedV642,key),collapsed=hasSaved?!!S.cache.scheduleCollapsedV642[key]:true;card.dataset.scheduleCollapseKey=key;card.dataset.scheduleId=String(row.schedule_id||'');card.classList.toggle('schedule-collapsed',collapsed);const head=card.querySelector('.schedule-card-head');if(head){head.classList.add(isProposal?'proposal-head':'exam-head');const done=row.assessment_completed===true||String(row.assessment_status||'').toUpperCase()==='COMPLETED',status=document.createElement('div');status.className='schedule-meta schedule-exam-status';status.innerHTML=`<small>Status</small><div class="exam-top-actions"><span class="badge ${done?'COMPLETED':'PENDING'}">${done?'Selesai':(isProposal?'Belum Seminar':'Belum Ujian')}</span></div>`;head.appendChild(status);if(!isProposal){const tools=status.querySelector('.exam-top-actions');card.querySelectorAll('.schedule-card-actions [data-action="exam-download"]').forEach(btn=>tools?.appendChild(btn))}}const button=document.createElement('button');button.type='button';button.className='btn secondary small schedule-toggle';button.dataset.action='schedule-toggle';button.textContent=collapsed?'Tampilkan Detail':'Sembunyikan Detail';button.setAttribute('aria-expanded',String(!collapsed));head?.appendChild(button)});return template.innerHTML}
+function scheduleCardsV642(rows,b,isProposal,downloadLabel,actions){
+ const template=document.createElement('template');
+ template.innerHTML=scheduleCardsV641(rows,b,isProposal,downloadLabel,actions);
+ S.cache.scheduleCollapsedV642=S.cache.scheduleCollapsedV642||{};
+ template.content.querySelectorAll('.schedule-card').forEach((card,i)=>{
+   const row=rows[i]||{},key=`${isProposal?'PROPOSAL':'EXAM'}:${row.schedule_id||i}`,
+     hasSaved=Object.prototype.hasOwnProperty.call(S.cache.scheduleCollapsedV642,key),
+     collapsed=hasSaved?!!S.cache.scheduleCollapsedV642[key]:true;
+   card.dataset.scheduleCollapseKey=key;
+   card.dataset.scheduleId=String(row.schedule_id||'');
+   card.classList.toggle('schedule-collapsed',collapsed);
+   const head=card.querySelector('.schedule-card-head');
+   if(head){
+     head.classList.add(isProposal?'proposal-head':'exam-head');
+     const done=row.assessment_completed===true||String(row.assessment_status||'').toUpperCase()==='COMPLETED';
+
+     const status=document.createElement('div');
+     status.className='schedule-meta schedule-exam-status';
+     status.innerHTML=`<small>Status</small><div class="exam-top-actions"><span class="badge ${done?'COMPLETED':'PENDING'}">${done?'Selesai':(isProposal?'Belum Seminar':'Belum Ujian')}</span></div>`;
+     head.appendChild(status);
+
+     if(!isProposal){
+       const downloadCol=document.createElement('div');
+       downloadCol.className='schedule-meta schedule-exam-download';
+       downloadCol.innerHTML='<small>Unduh</small><div class="exam-download-actions"></div>';
+       const tools=downloadCol.querySelector('.exam-download-actions');
+       const buttons=[...card.querySelectorAll('.schedule-card-actions [data-action="exam-download"]')];
+       buttons.forEach(btn=>tools?.appendChild(btn));
+       if(!buttons.length&&tools)tools.innerHTML='<span class="value">-</span>';
+       head.appendChild(downloadCol);
+     }
+
+     const button=document.createElement('button');
+     button.type='button';
+     button.className='btn secondary small schedule-toggle';
+     button.dataset.action='schedule-toggle';
+     button.textContent=collapsed?'Tampilkan Detail':'Sembunyikan Detail';
+     button.setAttribute('aria-expanded',String(!collapsed));
+     head.appendChild(button);
+   }
+ });
+ return template.innerHTML
+}
 function toggleScheduleCardV642(el){const card=el.closest('.schedule-card');if(!card)return;const collapsed=!card.classList.contains('schedule-collapsed');card.classList.toggle('schedule-collapsed',collapsed);el.textContent=collapsed?'Tampilkan Detail':'Sembunyikan Detail';el.setAttribute('aria-expanded',String(!collapsed));S.cache.scheduleCollapsedV642=S.cache.scheduleCollapsedV642||{};S.cache.scheduleCollapsedV642[card.dataset.scheduleCollapseKey]=collapsed}
 function scheduleCardsV641(rows,b,isProposal,downloadLabel,actions){
  if(!rows.length)return'<div class="card empty">Belum ada jadwal yang sesuai pencarian dan periode.</div>';
  const viewer=S.boot?.user?.role_id||'',roleLabel={CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'},roleOrder={CHAIR:1,EXAMINER_1:2,EXAMINER_2:3};
  return `<div class="schedule-cards">${rows.map(r=>{
   const scores=(b.examScores||[]).filter(x=>String(x.schedule_id)===String(r.schedule_id)).sort((a,z)=>(roleOrder[a.examiner_role]||9)-(roleOrder[z.examiner_role]||9)),own=scores.find(x=>String(x.lecturer_id)===String(b.currentReviewerId)),isChair=!isProposal&&String(r.reviewer1_id)===String(b.currentReviewerId),canTotal=!isProposal&&(isAdminLikeV720(viewer)||isChair),canTeamTable=!isProposal&&(isAdminLikeV720(viewer)||isChair),allLocked=scores.length===3&&scores.every(x=>x.finalized_at),sum=k=>scores.reduce((n,x)=>n+Number(x[k]||0),0).toFixed(2),avg=k=>scores.length?(scores.reduce((n,x)=>n+Number(x[k]||0),0)/scores.length).toFixed(2):'-',nameFor=x=>x.examiner_role==='CHAIR'?r.reviewer1_name:x.examiner_role==='EXAMINER_1'?r.supervisor_name:r.reviewer2_name;
-  const download=allLocked&&canTotal?`<button class="btn secondary small" data-action="exam-download" data-kind="recap" data-id="${attr(r.schedule_id)}">Unduh Rekap Nilai</button><button class="btn secondary small" data-action="exam-download" data-kind="minutes" data-id="${attr(r.schedule_id)}">Unduh Berita Acara</button>`:'',lock=own&&!own.finalized_at?`<button class="btn danger small" data-action="exam-score-lock" data-id="${attr(r.schedule_id)}">Kunci Nilai</button>`:own?.finalized_at?'<span class="badge APPROVED">Nilai Terkunci</span>':'',actionHtml=(actions?actions(r):'').replace(own?.finalized_at?/<button[^>]*data-action="exam-score"[^>]*>.*?<\/button>/:/$^/,'');
+  const download=allLocked&&canTotal?`<button class="btn secondary small" data-action="exam-download" data-kind="recap" data-id="${attr(r.schedule_id)}">Rekap Nilai</button><button class="btn secondary small" data-action="exam-download" data-kind="minutes" data-id="${attr(r.schedule_id)}">Berita Acara</button>`:'',lock=own&&!own.finalized_at?`<button class="btn danger small" data-action="exam-score-lock" data-id="${attr(r.schedule_id)}">Kunci Nilai</button>`:own?.finalized_at?'<span class="badge APPROVED">Nilai Terkunci</span>':'',actionHtml=(actions?actions(r):'').replace(own?.finalized_at?/<button[^>]*data-action="exam-score"[^>]*>.*?<\/button>/:/$^/,'');
   const ownPanel=own?`<div class="exam-score-overview-title">Penilaian Pribadi Saya</div><div class="score-chip"><small>Teknis</small><span class="value">${esc(own.technical_score)}</span></div><div class="score-chip"><small>Substansi</small><span class="value">${esc(own.substance_score)}</span></div>${own.activity_score!==null&&own.activity_score!==undefined?`<div class="score-chip"><small>Aktivitas</small><span class="value">${esc(own.activity_score)}</span></div>`:''}<div class="score-chip"><small>Nilai Skripsi</small><span class="value">${esc(own.thesis_score)}</span></div><div class="score-chip"><small>Nilai Komprehensif</small><span class="value">${esc(own.comprehensive_score)}</span></div>`:'';
   const summary=canTotal?`<div class="score-chip"><small>Rata-rata Nilai Skripsi</small><span class="value">${avg('thesis_score')} · ${scoreLetterV639(avg('thesis_score'))}</span></div><div class="score-chip"><small>Rata-rata Nilai Komprehensif</small><span class="value">${avg('comprehensive_score')} · ${scoreLetterV639(avg('comprehensive_score'))}</span></div><div class="score-chip"><small>Nilai Terkunci</small><span class="value">${scores.filter(x=>x.finalized_at).length}/3</span></div>`:'';
 
@@ -1784,7 +1979,7 @@ function scheduleCardsV641(rows,b,isProposal,downloadLabel,actions){
 }
 function examRoleV637(row,id){return String(row.reviewer1_id)===String(id)?'CHAIR':String(row.supervisor_id)===String(id)?'EXAMINER_1':String(row.reviewer2_id)===String(id)?'EXAMINER_2':''}
 function myExamScoreV637(b,scheduleId){return (b.examScores||[]).find(x=>String(x.schedule_id)===String(scheduleId)&&String(x.lecturer_id)===String(b.currentReviewerId))}
-function examChairSummariesV637(b,rows){const lecturer=String(b.currentReviewerId||''),allowed=rows.filter(r=>b.canManage||String(r.reviewer1_id)===lecturer);if(!allowed.length)return'';return allowed.map(row=>{const scores=(b.examScores||[]).filter(x=>String(x.schedule_id)===String(row.schedule_id)),avg=k=>scores.length?(scores.reduce((n,x)=>n+Number(x[k]||0),0)/scores.length).toFixed(2):'-';const lines=scores.map(x=>`<tr><td>${esc({CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'}[x.examiner_role]||x.examiner_role)}</td><td>${esc(x.technical_score)}</td><td>${esc(x.substance_score)}</td><td>${esc(x.activity_score??'-')}</td><td>${esc(x.thesis_score)}</td><td>${esc(x.comprehensive_score)}</td></tr>`).join('');return `<section class="section card"><div class="sectionhead"><div><h3>Ringkasan Nilai · ${esc(row.student_name)}</h3><p>Hanya Ketua Penguji dan Admin yang dapat melihat ringkasan tiga penguji.</p></div><div class="actions"><button class="btn secondary small" data-action="exam-download" data-kind="recap" data-id="${attr(row.schedule_id)}">Unduh Rekap Nilai</button><button class="btn secondary small" data-action="exam-download" data-kind="minutes" data-id="${attr(row.schedule_id)}">Unduh Berita Acara</button></div></div><div class="exam-summary"><div class="stat card"><small>Penguji Mengisi</small><b>${scores.length}/3</b></div><div class="stat card"><small>Rata-rata Skripsi</small><b>${avg('thesis_score')}</b></div><div class="stat card"><small>Rata-rata Komprehensif</small><b>${avg('comprehensive_score')}</b></div></div><div class="tablewrap score-table"><table class="table"><thead><tr><th>Peran</th><th>Teknis</th><th>Substansi</th><th>Aktivitas</th><th>Total Skripsi</th><th>Komprehensif</th></tr></thead><tbody>${lines||'<tr><td colspan="6">Belum ada nilai.</td></tr>'}</tbody></table></div></section>`}).join('')}
+function examChairSummariesV637(b,rows){const lecturer=String(b.currentReviewerId||''),allowed=rows.filter(r=>b.canManage||String(r.reviewer1_id)===lecturer);if(!allowed.length)return'';return allowed.map(row=>{const scores=(b.examScores||[]).filter(x=>String(x.schedule_id)===String(row.schedule_id)),avg=k=>scores.length?(scores.reduce((n,x)=>n+Number(x[k]||0),0)/scores.length).toFixed(2):'-';const lines=scores.map(x=>`<tr><td>${esc({CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'}[x.examiner_role]||x.examiner_role)}</td><td>${esc(x.technical_score)}</td><td>${esc(x.substance_score)}</td><td>${esc(x.activity_score??'-')}</td><td>${esc(x.thesis_score)}</td><td>${esc(x.comprehensive_score)}</td></tr>`).join('');return `<section class="section card"><div class="sectionhead"><div><h3>Ringkasan Nilai · ${esc(row.student_name)}</h3><p>Hanya Ketua Penguji dan Admin yang dapat melihat ringkasan tiga penguji.</p></div><div class="actions"><button class="btn secondary small" data-action="exam-download" data-kind="recap" data-id="${attr(row.schedule_id)}">Rekap Nilai</button><button class="btn secondary small" data-action="exam-download" data-kind="minutes" data-id="${attr(row.schedule_id)}">Berita Acara</button></div></div><div class="exam-summary"><div class="stat card"><small>Penguji Mengisi</small><b>${scores.length}/3</b></div><div class="stat card"><small>Rata-rata Skripsi</small><b>${avg('thesis_score')}</b></div><div class="stat card"><small>Rata-rata Komprehensif</small><b>${avg('comprehensive_score')}</b></div></div><div class="tablewrap score-table"><table class="table"><thead><tr><th>Peran</th><th>Teknis</th><th>Substansi</th><th>Aktivitas</th><th>Total Skripsi</th><th>Komprehensif</th></tr></thead><tbody>${lines||'<tr><td colspan="6">Belum ada nilai.</td></tr>'}</tbody></table></div></section>`}).join('')}
 function applySchedulePeriodV632(){const type=S.cache.scheduleType||'PROPOSAL_SEMINAR';S.cache.schedulePeriodV632=S.cache.schedulePeriodV632||{};S.cache.schedulePeriodV632[type]={academicYear:val('scheduleAcademicYear'),semester:val('scheduleSemester')};renderAcademicSchedule(S.cache.scheduleBundle||{},type);rememberViewV52(type==='PROPOSAL_SEMINAR'?'proposal_seminar':'thesis_exam',S.cache.scheduleBundle||{});}
 function applyScheduleSearchV639(el){const type=S.cache.scheduleType||'PROPOSAL_SEMINAR';S.cache.scheduleSearchV639=S.cache.scheduleSearchV639||{};S.cache.scheduleSearchV639[type]=el.value;clearTimeout(applyScheduleSearchV639.timer);applyScheduleSearchV639.timer=setTimeout(()=>{renderAcademicSchedule(S.cache.scheduleBundle||{},type);const input=$('scheduleSearch');if(input){input.focus();const n=input.value.length;input.setSelectionRange(n,n)}},160)}
 function scheduleResourceLinks(_,row){const links=[];if(row.recording_url)links.push(`<a class="download-link" href="${attr(row.recording_url)}" target="_blank" rel="noopener">Buka Rekaman</a>`);if(row.presentation_url)links.push(`<a class="download-link" href="${attr(row.presentation_url)}" target="_blank" rel="noopener">Buka Bahan Tayang</a>`);return links.length?`<div class="resource-links">${links.join('')}</div>`:'Belum ditambahkan'}
