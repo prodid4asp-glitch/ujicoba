@@ -670,6 +670,25 @@ html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hid
 @media(max-width:760px){.exam-comp-course-grid{grid-template-columns:1fr}.exam-comp-table{min-width:700px}}
 
 /* build 20260924-2335: status dosen Belum Ujian/Sedang Ujian/Selesai; tombol nilai hanya di detail; komprehensif terkunci tetap dapat dilihat. */
+
+/* build 20260925-0100: Dashboard Dosen — jadwal ujian skripsi Genap 2025/2026 */
+.lecturer-exam-dashboard{margin-top:10px}
+.lecturer-exam-tools{display:grid;grid-template-columns:minmax(230px,1.5fr) repeat(4,minmax(115px,.7fr));gap:8px;align-items:end;margin:9px 0}
+.lecturer-exam-tools .field{margin:0;min-width:0}.lecturer-exam-tools .field label{display:block;margin-bottom:4px}
+.lecturer-exam-tools input,.lecturer-exam-tools select{width:100%;height:35px;min-width:0;padding:6px 8px;font-size:12px}
+.lecturer-exam-dashboard .tablewrap{overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+.lecturer-exam-dashboard .table{min-width:1320px;width:100%;table-layout:auto}
+.lecturer-exam-dashboard .table th,.lecturer-exam-dashboard .table td{font-size:11.5px;line-height:1.45;padding:7px 8px;vertical-align:top}
+.lecturer-exam-dashboard .table th{white-space:nowrap}
+.lecturer-exam-dashboard .table td[data-col="judul"]{min-width:240px;max-width:380px;white-space:normal;overflow-wrap:anywhere}
+.lecturer-exam-dashboard .table td[data-col="tanggal"]{white-space:nowrap}
+.lecturer-exam-dashboard .table td[data-col="waktu"]{white-space:nowrap}
+.lecturer-exam-dashboard .table td[data-col="mahasiswa"]{min-width:160px}
+.lecturer-exam-result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--muted)}
+.lecturer-exam-pages{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:12px}
+.lecturer-exam-pages button{padding:5px 10px}
+@media(max-width:1200px){.lecturer-exam-tools{grid-template-columns:repeat(3,minmax(0,1fr))}.lecturer-exam-tools .field:first-child{grid-column:1/-1}}
+@media(max-width:760px){.lecturer-exam-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.lecturer-exam-tools .field:first-child{grid-column:1/-1}.lecturer-exam-dashboard .table{width:max-content;min-width:1180px}.lecturer-exam-dashboard .tablewrap{max-width:100%}}
 </style>
 </head>
 <body>
@@ -1037,7 +1056,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20260924-2255';
+const INTERNAL_BUILD_V720='20260925-0100';
 const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
@@ -1472,11 +1491,91 @@ function renderPage(p,b){$('content').classList.toggle('compact-academic',['guid
 function cards(rows=[]){return rows.length?`<div class="grid stats">${rows.map(x=>`<div class="card stat"><small>${esc(x.label)}</small><b>${esc(x.value)}</b></div>`).join('')}</div>`:''}
 function table(rows,cols,actions){if(!rows?.length)return'<div class="card empty">Belum ada data.</div>';return `<div class="tablewrap"><table class="table"><thead><tr>${cols.map(c=>`<th data-col="${attr(c[0])}">${esc(c[1])}</th>`).join('')}${actions?'<th data-col="actions">Aksi</th>':''}</tr></thead><tbody>${rows.map((r,i)=>`<tr>${cols.map(c=>`<td data-col="${attr(c[0])}">${c[2]?c[2](r[c[0]],r):esc(r[c[0]]??'-')}</td>`).join('')}${actions?`<td data-col="actions">${actions(r,i)}</td>`:''}</tr>`).join('')}</tbody></table></div>`}
 function csvSourceCardV60(){return''}
+
+// build 20260925-0100: lecturer dashboard uses a read-only Supabase schedule table.
+const DASHBOARD_EXAM_PAGE_SIZE_V725=30;
+function dashboardExamDateTextV725(raw){
+  const s=String(raw||'').trim();if(!s)return '-';
+  let normalized=s;
+  const dayFirst=s.match(/^(\d{1,2})[/-](\d{1,2})[/-](20\d{2})/);
+  if(dayFirst)normalized=`${dayFirst[3]}-${dayFirst[2].padStart(2,'0')}-${dayFirst[1].padStart(2,'0')}`;
+  if(/^20\d{2}-\d{1,2}-\d{1,2}/.test(normalized))return scheduleDateLongV720(normalized);
+  return s;
+}
+function dashboardExamStableRowsV725(data){return Array.isArray(data?.rows)?data.rows:[]}
+function dashboardExamFieldsV725(rows){
+  const options=(key)=>[...new Set(rows.map(r=>String(r[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id',{numeric:true}));
+  const dates=[...new Map(rows.filter(r=>r.sort_date&&r.sort_date!=='9999-99-99').map(r=>[r.sort_date,dashboardExamDateTextV725(r.sort_date)])).entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  return {programs:options('prodi'),sessions:options('sesi'),rooms:options('ruang'),dates};
+}
+function dashboardExamSelectOptionsV725(options,current){return options.map(x=>`<option value="${attr(x)}" ${x===current?'selected':''}>${esc(x)}</option>`).join('')}
+function dashboardExamRowsHtmlV725(rows){
+  const cols=[['tanggal','Tanggal',v=>esc(dashboardExamDateTextV725(v))],['waktu','Waktu'],['sesi','Sesi'],['prodi','Prodi'],['ruang','Ruang / BR'],['mahasiswa','Mahasiswa'],['nim','NIM'],['judul','Judul Skripsi'],['pembimbing','Pembimbing'],['ketua_penguji','Ketua Penguji'],['anggota_penguji_1','Anggota Penguji 1'],['anggota_penguji_2','Anggota Penguji 2']];
+  // Keep columns that exist in the physical table, even when their names differ.
+  const visible=cols.filter(c=>rows.some(r=>String(r[c[0]]??'').trim()!==''));
+  // Source may be empty after filters; use original dataset's columns instead (caller supplies all rows separately).
+  return {cols,visible};
+}
+function dashboardExamFilteredV725(all,state){
+  return all.filter(r=>{
+    if(state.q&&!searchMatchesV663(Object.entries(r).filter(([k])=>!k.startsWith('sort_')).map(([,v])=>v).join(' '),state.q))return false;
+    if(state.prodi&&r.prodi!==state.prodi)return false;
+    if(state.tanggal&&r.sort_date!==state.tanggal)return false;
+    if(state.sesi&&r.sesi!==state.sesi)return false;
+    if(state.ruang&&r.ruang!==state.ruang)return false;
+    return true;
+  });
+}
+function dashboardExamPaintRowsV725(data){
+  const root=$('lecturerExamDashboard725');if(!root)return;
+  const all=dashboardExamStableRowsV725(data),state=S.cache.dashboardExamFiltersV725||{q:'',prodi:'',tanggal:'',sesi:'',ruang:'',page:0};
+  const filtered=dashboardExamFilteredV725(all,state),totalPages=Math.max(1,Math.ceil(filtered.length/DASHBOARD_EXAM_PAGE_SIZE_V725));
+  state.page=Math.min(Math.max(0,Number(state.page)||0),totalPages-1);
+  const page=filtered.slice(state.page*DASHBOARD_EXAM_PAGE_SIZE_V725,(state.page+1)*DASHBOARD_EXAM_PAGE_SIZE_V725);
+  const summary=root.querySelector('[data-exam-summary725]');
+  if(summary)summary.textContent=`${filtered.length.toLocaleString('id-ID')} dari ${all.length.toLocaleString('id-ID')} jadwal`;
+  const output=root.querySelector('[data-exam-results725]');if(!output)return;
+  if(!filtered.length){output.innerHTML=`<div class="card empty">${all.length?'Tidak ada jadwal yang cocok dengan pencarian atau filter.':'Belum ada jadwal pada tabel Supabase ini.'}</div>`;return;}
+  const columnDefs=dashboardExamRowsHtmlV725(all).visible;
+  const formatted=columnDefs.map(c=>[c[0],c[1],c[2]]);
+  output.innerHTML=table(page,formatted)+`<div class="lecturer-exam-pages"><span>Halaman ${state.page+1} dari ${totalPages}</span><button type="button" class="btn ghost small" data-exam-page725="prev" ${state.page===0?'disabled':''}>Sebelumnya</button><button type="button" class="btn ghost small" data-exam-page725="next" ${state.page>=totalPages-1?'disabled':''}>Berikutnya</button></div>`;
+}
+function renderLecturerExamDashboardV725(data){
+  const rows=dashboardExamStableRowsV725(data),state=S.cache.dashboardExamFiltersV725||{q:'',prodi:'',tanggal:'',sesi:'',ruang:'',page:0};
+  S.cache.dashboardExamFiltersV725=state;
+  const opts=dashboardExamFieldsV725(rows);
+  let html=`<section class="section lecturer-exam-dashboard" id="lecturerExamDashboard725"><div class="sectionhead"><div><h3>Jadwal Ujian Skripsi — Genap 2025/2026</h3><p>Data langsung dari tabel Supabase <code>jadwal_ujian_skripsi_genap_2025_2026</code>, diurutkan dari jadwal paling awal.</p></div><button type="button" class="btn secondary" data-exam-refresh725>Muat ulang</button></div>`;
+  if(data?.error){html+=`<div class="alert">${esc(data.error)}</div></section>`;return html}
+  html+=`<div class="lecturer-exam-tools"><div class="field"><label for="dashboardExamSearch725">Cari jadwal</label><input id="dashboardExamSearch725" data-exam-filter725="q" type="search" value="${attr(state.q)}" placeholder="Nama mahasiswa, judul, dosen, NIM, ruang..."></div><div class="field"><label for="dashboardExamProdi725">Prodi</label><select id="dashboardExamProdi725" data-exam-filter725="prodi"><option value="">Semua prodi</option>${dashboardExamSelectOptionsV725(opts.programs,state.prodi)}</select></div><div class="field"><label for="dashboardExamDate725">Tanggal</label><select id="dashboardExamDate725" data-exam-filter725="tanggal"><option value="">Semua tanggal</option>${opts.dates.map(([v,label])=>`<option value="${attr(v)}" ${state.tanggal===v?'selected':''}>${esc(label)}</option>`).join('')}</select></div><div class="field"><label for="dashboardExamSesi725">Sesi</label><select id="dashboardExamSesi725" data-exam-filter725="sesi"><option value="">Semua sesi</option>${dashboardExamSelectOptionsV725(opts.sessions,state.sesi)}</select></div><div class="field"><label for="dashboardExamRuang725">Ruang / BR</label><select id="dashboardExamRuang725" data-exam-filter725="ruang"><option value="">Semua ruang</option>${dashboardExamSelectOptionsV725(opts.rooms,state.ruang)}</select></div></div><div class="lecturer-exam-result-head"><span data-exam-summary725></span><button type="button" class="btn ghost small" data-exam-reset725>Reset pencarian & filter</button></div><div data-exam-results725></div></section>`;
+  return html;
+}
+function initLecturerExamDashboardV725(data){
+  const root=$('lecturerExamDashboard725');if(!root)return;
+  const apply=()=>{const state=S.cache.dashboardExamFiltersV725||{};root.querySelectorAll('[data-exam-filter725]').forEach(el=>state[el.dataset.examFilter725]=el.value);state.page=0;S.cache.dashboardExamFiltersV725=state;dashboardExamPaintRowsV725(data)};
+  const search=$('dashboardExamSearch725');if(search){search.addEventListener('input',apply);search.addEventListener('search',apply)}
+  root.querySelectorAll('select[data-exam-filter725]').forEach(el=>el.addEventListener('change',apply));
+  root.addEventListener('click',event=>{
+    const reset=event.target.closest('[data-exam-reset725]');
+    if(reset){S.cache.dashboardExamFiltersV725={q:'',prodi:'',tanggal:'',sesi:'',ruang:'',page:0};root.querySelectorAll('[data-exam-filter725]').forEach(el=>el.value='');dashboardExamPaintRowsV725(data);return}
+    const pageButton=event.target.closest('[data-exam-page725]');
+    if(pageButton){const state=S.cache.dashboardExamFiltersV725;state.page=Math.max(0,(Number(state.page)||0)+(pageButton.dataset.examPage725==='next'?1:-1));dashboardExamPaintRowsV725(data);return}
+    const refresh=event.target.closest('[data-exam-refresh725]');
+    if(refresh){refresh.disabled=true;refresh.textContent='Memuat…';refreshPageV52('dashboard',true).catch(e=>toast('Gagal memuat jadwal: '+errorTextV635(e),true)).finally(()=>{if(refresh.isConnected){refresh.disabled=false;refresh.textContent='Muat ulang'}})}
+  });
+  dashboardExamPaintRowsV725(data);
+}
+
 function renderDashboard(d){
  const userName=esc(S.boot.user.name||S.boot.user.username),menuCards=d.cards||[],period=d.periodTimeline||{};
  let h=`<section class="hero dashboard-hero"><h3>Selamat datang, ${userName}</h3></section>`;
  if(menuCards.length)h+=`<div class="dashboard-menu-strip">${menuCards.map(x=>`<div class="dashboard-menu-card"><small>${esc(x.label)}</small><b>${esc(x.value)}</b></div>`).join('')}</div>`;
  (d.alerts||[]).forEach(a=>h+=`<div class="alert">${esc(a)}</div>`);
+ if(S.boot?.user?.role_id==='lecturer'){
+   h+=renderLecturerExamDashboardV725(d.legacyExamSchedule||{rows:[],error:'Data jadwal belum tersedia dari backend. Deploy portal-api terbaru.'});
+   $('content').innerHTML=h;
+   initLecturerExamDashboardV725(d.legacyExamSchedule||{});
+   return;
+ }
  if((period.items||[]).length){
    const rows=period.items.map((x,i)=>({no:i+1,kegiatan:x.label||'-',mulai:x.start||'',selesai:x.end||'',status:x.open?'Aktif':'Tidak Aktif'}));
    h+=`<section class="section dashboard-timeline"><div class="sectionhead"><div><h3>Periode & Timeline Akademik</h3><p>Semester ${esc(period.semester||'-')} · Tahun Akademik ${esc(period.academic_year||'-')}</p></div></div>${table(rows,[['no','No.'],['kegiatan','Kegiatan'],['mulai','Mulai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['selesai','Selesai',v=>v?esc(periodDateTimeV624(v)):'Tidak dibatasi'],['status','Status',v=>statusBadge(v==='Aktif'?'ACTIVE':'CLOSED')]])}</section>`;
