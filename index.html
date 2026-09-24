@@ -603,6 +603,37 @@ html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hid
   .nav .nav-submenu button{height:39px;font-size:12.5px}
 }
 
+
+/* build 20260924-1900: formulir nilai Skripsi horizontal berdasarkan kedudukan penguji */
+.modal.exam-rubric-modal{width:min(1120px,calc(100vw - 32px));max-height:calc(100dvh - 32px);display:flex;flex-direction:column}
+.modal.exam-rubric-modal>.modalhead,.modal.exam-rubric-modal>.modalfoot{flex:0 0 auto}
+.modal.exam-rubric-modal>.modalbody{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+.exam-rubric-role{margin:10px 0 14px}
+.exam-rubric-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:5px;margin:0 0 15px}
+.exam-rubric-table{width:100%;min-width:720px;border-collapse:collapse;table-layout:fixed;font-size:12.3px;line-height:1.46}
+.exam-rubric-col-no{width:49px}.exam-rubric-col-desc{width:auto}.exam-rubric-col-score{width:154px}
+.exam-rubric-table th{padding:10px 11px;text-align:center;background:#edf4f8;color:#263e4d;text-transform:uppercase;font-size:12px;white-space:nowrap}
+.exam-rubric-table th,.exam-rubric-table td{border:1px solid var(--line)}
+.exam-rubric-table tbody tr:nth-child(even){background:#fafcfd}
+.exam-rubric-table td{padding:12px;vertical-align:top}
+.exam-rubric-table .exam-rubric-no{text-align:center;font-weight:600}
+.exam-rubric-description{text-align:justify;overflow-wrap:break-word}
+.exam-rubric-description b{display:block;font-size:13px;margin-bottom:3px}
+.exam-rubric-description ol{padding-left:23px;margin:5px 0 0}
+.exam-rubric-description li{padding-left:3px;margin:0 0 4px}
+.exam-rubric-grade{vertical-align:middle!important;text-align:center}
+.exam-rubric-grade label{display:block;font-size:11px;font-weight:700;margin-bottom:6px;color:#475467}
+.exam-rubric-grade input{box-sizing:border-box;width:100%;max-width:120px;padding:10px;border:1px solid #d9dee7;border-radius:5px;text-align:center;font-weight:650;font-size:15px;background:#fff}
+.exam-rubric-comprehensive{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);background:#f5f8fa;margin:0 0 16px}
+.exam-rubric-comprehensive label{margin:0;font-size:13px}
+.exam-rubric-comprehensive input{width:142px;flex:0 0 142px;text-align:center}
+@media(max-width:760px){
+ .modalback:has(.exam-rubric-modal){padding:8px}
+ .modal.exam-rubric-modal{width:100%;max-height:calc(100dvh - 16px)}
+ .modal.exam-rubric-modal>.modalbody{padding:10px}
+ .exam-rubric-table{min-width:720px}
+ .exam-rubric-comprehensive input{width:110px;flex-basis:110px}
+}
 </style>
 </head>
 <body>
@@ -970,7 +1001,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20260924-1325';
+const INTERNAL_BUILD_V720='20260924-1900';
 const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
@@ -2140,7 +2171,7 @@ function scheduleCardsV641(rows,b,isProposal,downloadLabel,actions){
  return `<div class="schedule-cards">${rows.map(r=>{
   const scores=(b.examScores||[]).filter(x=>String(x.schedule_id)===String(r.schedule_id)).sort((a,z)=>(roleOrder[a.examiner_role]||9)-(roleOrder[z.examiner_role]||9)),own=scores.find(x=>String(x.lecturer_id)===String(b.currentReviewerId)),isChair=!isProposal&&String(r.reviewer1_id)===String(b.currentReviewerId),canTotal=!isProposal&&(isAdminLikeV720(viewer)||isChair),canTeamTable=!isProposal&&(isAdminLikeV720(viewer)||isChair),allLocked=scores.length===3&&scores.every(x=>x.finalized_at),sum=k=>scores.reduce((n,x)=>n+Number(x[k]||0),0).toFixed(2),avg=k=>scores.length?(scores.reduce((n,x)=>n+Number(x[k]||0),0)/scores.length).toFixed(2):'-',nameFor=x=>x.examiner_role==='CHAIR'?r.reviewer1_name:x.examiner_role==='EXAMINER_1'?r.supervisor_name:r.reviewer2_name;
   const download=allLocked&&canTotal?`<button class="btn secondary small" data-action="exam-download" data-kind="recap" data-id="${attr(r.schedule_id)}">Rekap Nilai</button><button class="btn secondary small" data-action="exam-download" data-kind="minutes" data-id="${attr(r.schedule_id)}">Berita Acara</button>`:'',lock=own&&!own.finalized_at?`<button class="btn danger small" data-action="exam-score-lock" data-id="${attr(r.schedule_id)}">Kunci Nilai</button>`:own?.finalized_at?'<span class="badge APPROVED">Nilai Terkunci</span>':'',actionHtml=(actions?actions(r):'').replace(own?.finalized_at?/<button[^>]*data-action="exam-score"[^>]*>.*?<\/button>/:/$^/,'');
-  const ownPanel=own?`<div class="exam-score-overview-title">Penilaian Pribadi Saya</div><div class="score-chip"><small>Teknis</small><span class="value">${esc(own.technical_score)}</span></div><div class="score-chip"><small>Substansi</small><span class="value">${esc(own.substance_score)}</span></div>${own.activity_score!==null&&own.activity_score!==undefined?`<div class="score-chip"><small>Aktivitas</small><span class="value">${esc(own.activity_score)}</span></div>`:''}<div class="score-chip"><small>Nilai Skripsi</small><span class="value">${esc(own.thesis_score)}</span></div><div class="score-chip"><small>Nilai Komprehensif</small><span class="value">${esc(own.comprehensive_score)}</span></div>`:'';
+  const ownPanel=own?`<div class="exam-score-overview-title">Penialaian</div><div class="score-chip"><small>Teknis</small><span class="value">${esc(own.technical_score)}</span></div><div class="score-chip"><small>Substansi</small><span class="value">${esc(own.substance_score)}</span></div>${own.activity_score!==null&&own.activity_score!==undefined?`<div class="score-chip"><small>Aktivitas</small><span class="value">${esc(own.activity_score)}</span></div>`:''}<div class="score-chip"><small>Nilai Skripsi</small><span class="value">${esc(own.thesis_score)}</span></div><div class="score-chip"><small>Nilai Komprehensif</small><span class="value">${esc(own.comprehensive_score)}</span></div>`:'';
   const summary=canTotal?`<div class="score-chip"><small>Rata-rata Nilai Skripsi</small><span class="value">${avg('thesis_score')} · ${scoreLetterV639(avg('thesis_score'))}</span></div><div class="score-chip"><small>Rata-rata Nilai Komprehensif</small><span class="value">${avg('comprehensive_score')} · ${scoreLetterV639(avg('comprehensive_score'))}</span></div><div class="score-chip"><small>Nilai Terkunci</small><span class="value">${scores.filter(x=>x.finalized_at).length}/3</span></div>`:'';
 
   const scoreOverview=(ownPanel||summary)?`<div class="exam-score-overview">${ownPanel}${summary}</div>`:'';
@@ -2172,7 +2203,58 @@ function openStudentReviewFeedback(reviewId){const review=(S.cache.scheduleBundl
 async function saveStudentReviewFeedback(reviewId){const feedback=val('studentReviewFeedback');if(!feedback)return toast('Tanggapan mahasiswa wajib diisi.',true);busy(true);try{await api('saveDeskReviewStudentFeedback',reviewId,feedback);closeModal();toast('Tanggapan berhasil disimpan.');await loadPage(S.cache.scheduleType==='PROPOSAL_SEMINAR'?'proposal_seminar':'thesis_exam',true)}catch(e){toast(e.message,true)}finally{busy(false)}}
 function openExamFinalApprovalV637(scheduleId){const b=S.cache.scheduleBundle||{},row=(b.rows||[]).find(x=>String(x.schedule_id)===String(scheduleId)),doc=row?.final_document,role=examRoleV637(row||{},b.currentReviewerId),prefix=role==='CHAIR'?'chair':role==='EXAMINER_1'?'examiner1':'examiner2',label={CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'}[role];if(!doc||!role)return toast('Skripsi Final atau peran penguji tidak ditemukan.',true);const approved=doc[prefix+'_approval'],note=doc[prefix+'_note']||'';const body=`${scheduleReviewContext(row)}<div class="subtlebox"><b>${esc(doc.file_name||'Skripsi Final')}</b> · <a href="${attr(doc.file_url)}" target="_blank" rel="noopener">Buka Skripsi Final</a></div><div class="field" style="margin-top:14px"><label>Status Persetujuan <span class="req">*</span></label><select id="efaDecision"><option value="">Pilih keputusan</option><option value="APPROVED" ${approved===true?'selected':''}>Setujui Skripsi Final</option><option value="REJECTED" ${approved===false?'selected':''}>Tolak / Minta Perbaikan</option></select></div><div class="field"><label>Catatan Approval Skripsi Final <span class="req">*</span></label><textarea id="efaNote" style="min-height:150px">${esc(note)}</textarea></div>`;openModal('Approval Skripsi Final',label,body,`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="exam-final-approval-save" data-id="${attr(scheduleId)}">Simpan Persetujuan</button></div>`)}
 async function saveExamFinalApprovalV637(scheduleId){const b=S.cache.scheduleBundle||{},row=(b.rows||[]).find(x=>String(x.schedule_id)===String(scheduleId));if(!val('efaDecision')||!val('efaNote'))return toast('Keputusan dan catatan approval wajib diisi.',true);busy(true);try{await api('reviewDocument',{document_id:row.final_document.document_id,decision:val('efaDecision'),note:val('efaNote')});closeModal();toast('Persetujuan Skripsi Final berhasil disimpan.');await loadPage('thesis_exam',true)}catch(e){toast(e.message,true)}finally{busy(false)}}
-function openExamScoreV637(scheduleId){const b=S.cache.scheduleBundle||{},row=(b.rows||[]).find(x=>String(x.schedule_id)===String(scheduleId));if(!row)return toast('Jadwal ujian tidak ditemukan.',true);const role=examRoleV637(row,b.currentReviewerId),old=myExamScoreV637(b,scheduleId)||{},supervisor=role==='EXAMINER_1',isChair=role==='CHAIR',label={CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1 / Dosen Pembimbing',EXAMINER_2:'Anggota Penguji 2'}[role];if(!role)return toast('Anda tidak tercantum sebagai penguji.',true);const conclusionOptions=['Lulus dan Yudisium','Mengulang'];const conclusionField=isChair?`<div class="field"><label>Kesimpulan Tim Penguji</label><select id="esConclusion" required><option value="">Pilih kesimpulan</option>${conclusionOptions.map(x=>`<option value="${attr(x)}" ${String(old.conclusion||'')===x?'selected':''}>${esc(x)}</option>`).join('')}</select><div class="hint">Kesimpulan hanya ditetapkan oleh Ketua Penguji dan digunakan pada Berita Acara Ujian.</div></div>`:'';const body=`${scheduleReviewContext(row)}<div class="subtlebox"><b>${esc(label)}</b><br>${supervisor?'Teknis 30% + Substansi 50% + Aktivitas Penulisan 20%':'Teknis 30% + Substansi 70%'}</div><div class="exam-score-grid" style="margin-top:14px"><div class="field"><label>Teknis Penulisan (30%) <span class="req">*</span></label><input id="esTechnical" type="number" min="0" max="100" step="0.01" value="${attr(old.technical_score??'')}"></div><div class="field"><label>Substansi Isi (${supervisor?'50':'70'}%) <span class="req">*</span></label><input id="esSubstance" type="number" min="0" max="100" step="0.01" value="${attr(old.substance_score??'')}"></div>${supervisor?`<div class="field"><label>Aktivitas Penulisan (20%) <span class="req">*</span></label><input id="esActivity" type="number" min="0" max="100" step="0.01" value="${attr(old.activity_score??'')}"></div>`:''}<div class="field"><label>Nilai Komprehensif <span class="req">*</span></label><input id="esComprehensive" type="number" min="0" max="100" step="0.01" value="${attr(old.comprehensive_score??'')}"></div></div><div class="field"><label>Catatan Skripsi untuk Mahasiswa <span class="req">*</span></label><textarea id="esNote" style="min-height:130px">${esc(old.note||'')}</textarea></div>${conclusionField}`;openModal('Penilaian Ujian Skripsi',label,body,`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="exam-score-save" data-id="${attr(scheduleId)}">Simpan Penilaian</button></div>`)}
+const EXAM_THESIS_RUBRIC_V727={
+ technical:[
+  'Kesesuaian format penulisan Skripsi dengan pedoman penulisan Skripsi yang diterbitkan oleh PKN STAN: marjin, huruf, spasi, paginasi, bagian teks, dan struktur penulisan;',
+  'Kesesuaian penyajian naskah akademik dengan pedoman penulisan Skripsi yang diterbitkan oleh PKN STAN: kutipan, daftar pustaka, tabel, grafik, gambar, dan lampiran;',
+  'Kesesuaian penggunaan tata bahasa dengan PUEBI, antara lain: struktur kalimat, paragraf, ejaan, dan tanda baca.'
+ ],
+ substance:[
+  'Kejelasan (clearance) uraian latar belakang penulisan Skripsi beserta dengan urgensinya;',
+  'Kecukupan dan relevansi landasan teori atau kerangka berpikir sebagai dasar penulisan dan pembahasan Skripsi;',
+  'Kecukupan dan relevansi data/informasi/bahan yang digunakan dalam penelitian atau penulisan dan pembahasan Skripsi;',
+  'Kemampuan untuk mengaitkan dan membandingkan antara landasan teori/kerangka berpikir dengan data/informasi yang diperoleh;',
+  'Kedalaman atas uraian pembahasan materi Skripsi;',
+  'Kemampuan untuk menyusun simpulan, saran, atau rekomendasi kebijakan atas pembahasan Skripsi;',
+  'Kemampuan untuk merumuskan solusi atau rekomendasi atas gap yang ditemukan dalam pembahasan Skripsi;',
+  'Tingkat orisinalitas Skripsi.'
+ ],
+ activity:[
+  'Intensitas komunikasi dan aktivitas pembimbingan dengan Dosen Pembimbing Skripsi;',
+  'Ritme keajegan konsultasi dan kemajuan (progress) penulisan Skripsi di sepanjang periode penyusunan skripsi;',
+  'Sikap, tata perilaku, kedisiplinan dan kesopanan.'
+ ]
+};
+function examThesisRubricRowV727(number,title,weight,criteria,id,oldValue){
+ const items=(criteria||[]).map(x=>`<li>${esc(x)}</li>`).join('');
+ return `<tr><td class="exam-rubric-no">${number}.</td><td class="exam-rubric-description"><b>${esc(title)} (${weight}%)</b><div>Mencakup namun tidak terbatas pada:</div><ol type="a">${items}</ol></td><td class="exam-rubric-grade"><label for="${attr(id)}">Nilai angka <span class="req">*</span></label><input id="${attr(id)}" type="number" min="0" max="100" step="0.01" inputmode="decimal" required value="${attr(oldValue??'')}" aria-label="Nilai ${attr(title)}" placeholder="0–100"></td></tr>`;
+}
+function openExamScoreV637(scheduleId){
+ const b=S.cache.scheduleBundle||{},row=(b.rows||[]).find(x=>String(x.schedule_id)===String(scheduleId));
+ if(!row)return toast('Jadwal ujian tidak ditemukan.',true);
+ const role=examRoleV637(row,b.currentReviewerId),old=myExamScoreV637(b,scheduleId)||{},supervisor=role==='EXAMINER_1',isChair=role==='CHAIR',label={CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1 / Dosen Pembimbing',EXAMINER_2:'Anggota Penguji 2'}[role];
+ if(!role)return toast('Anda tidak tercantum sebagai penguji.',true);
+ const conclusionOptions=['Lulus dan Yudisium','Mengulang'];
+ const conclusionField=isChair?`<div class="field"><label>Kesimpulan Tim Penguji</label><select id="esConclusion" required><option value="">Pilih kesimpulan</option>${conclusionOptions.map(x=>`<option value="${attr(x)}" ${String(old.conclusion||'')===x?'selected':''}>${esc(x)}</option>`).join('')}</select><div class="hint">Kesimpulan hanya ditetapkan oleh Ketua Penguji dan digunakan pada Berita Acara Ujian.</div></div>`:'';
+ const rubric=EXAM_THESIS_RUBRIC_V727;
+ const rows=[
+   examThesisRubricRowV727(1,'Teknik Penulisan Skripsi',30,rubric.technical,'esTechnical',old.technical_score),
+   examThesisRubricRowV727(2,'Substansi Isi atau Konten Skripsi',supervisor?50:70,rubric.substance,'esSubstance',old.substance_score),
+   ...(supervisor?[examThesisRubricRowV727(3,'Aktivitas Penulisan Skripsi',20,rubric.activity,'esActivity',old.activity_score)]:[])
+ ].join('');
+ const body=`${scheduleReviewContext(row)}
+  <div class="subtlebox exam-rubric-role"><b>${esc(label)}</b> · ${supervisor?'Teknik 30% + Substansi 50% + Aktivitas 20%':'Teknik 30% + Substansi 70%'}</div>
+  <div class="exam-rubric-scroll" role="region" aria-label="Tabel penilaian Skripsi; geser ke samping bila diperlukan" tabindex="0">
+   <table class="exam-rubric-table"><colgroup><col class="exam-rubric-col-no"><col class="exam-rubric-col-desc"><col class="exam-rubric-col-score"></colgroup>
+    <thead><tr><th>No.</th><th>Faktor-faktor Penilaian dan Penjelasan</th><th>Nilai Angka</th></tr></thead><tbody>${rows}</tbody>
+   </table>
+  </div>
+  <div class="exam-rubric-comprehensive field"><label for="esComprehensive">Nilai Komprehensif <span class="req">*</span></label><input id="esComprehensive" type="number" min="0" max="100" step="0.01" inputmode="decimal" required value="${attr(old.comprehensive_score??'')}" aria-label="Nilai Komprehensif" placeholder="0–100"></div>
+  <div class="field"><label for="esNote">Catatan Skripsi untuk Mahasiswa <span class="req">*</span></label><textarea id="esNote" style="min-height:130px">${esc(old.note||'')}</textarea></div>${conclusionField}`;
+ openModal('Penilaian Ujian Skripsi',label,body,`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="exam-score-save" data-id="${attr(scheduleId)}">Simpan Penilaian</button></div>`);
+ document.querySelector('#modalBack .modal')?.classList.add('exam-rubric-modal');
+}
+
 async function saveExamScoreV637(id){const fields=['esTechnical','esSubstance','esComprehensive'],doc=(S.cache.scheduleBundle?.rows||[]).find(x=>String(x.schedule_id)===String(id)),role=examRoleV637(doc||{},S.cache.scheduleBundle?.currentReviewerId),supervisor=role==='EXAMINER_1',isChair=role==='CHAIR';if(supervisor)fields.push('esActivity');if(fields.some(k=>val(k)===''||Number(val(k))<0||Number(val(k))>100)||!val('esNote'))return toast('Seluruh nilai 0–100 dan catatan mahasiswa wajib diisi.',true);const conclusion=isChair?val('esConclusion'):'';if(isChair&&!['Lulus dan Yudisium','Mengulang'].includes(conclusion))return toast('Ketua Penguji wajib memilih Kesimpulan Tim Penguji.',true);busy(true);try{await api('saveThesisExamScore',{schedule_id:id,technical_score:val('esTechnical'),substance_score:val('esSubstance'),activity_score:supervisor?val('esActivity'):null,comprehensive_score:val('esComprehensive'),note:val('esNote'),conclusion});closeModal();toast('Penilaian berhasil disimpan.');await loadPage('thesis_exam',true)}catch(e){toast(e.message,true)}finally{busy(false)}}
 function lockExamScoreV640(id){openModal('Kunci Nilai','Nilai yang sudah dikunci tidak dapat diubah lagi.','<div class="alert">Pastikan nilai dan catatan sudah benar. Apakah Anda yakin ingin mengunci nilai ini?</div>',`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Tidak</button><button class="btn danger" data-action="exam-score-lock-confirm" data-id="${attr(id)}">Ya, Kunci Nilai</button></div>`)}
 async function lockExamScoreConfirmV640(id){busy(true);try{await api('lockThesisExamScore',{schedule_id:id});closeModal();toast('Nilai berhasil dikunci.');await loadPage('thesis_exam',true)}catch(e){toast(e.message,true)}finally{busy(false)}}
@@ -2524,7 +2606,7 @@ async function adminExport(entity){busy(true);try{const r=await api('exportEntit
 function openPassword(force=false){const reminder=!!force||!!S.forcePasswordChange;const sub=reminder?'Akun ini masih menggunakan password awal. Anda dapat menggantinya sekarang atau memilih Nanti saja. Pengingat akan muncul lagi pada login berikutnya selama password awal belum diganti.':'Gunakan minimal 8 karakter.';openModal('Ganti Password',sub,`<div class="field"><label>Password saat ini</label><input id="pwCurrent" type="password" autocomplete="current-password"></div><div class="field"><label>Password baru</label><input id="pwNew" type="password" autocomplete="new-password"></div><div class="field"><label>Ulangi password</label><input id="pwNew2" type="password" autocomplete="new-password"></div>${reminder?'<div class="alert">Password awal belum diganti. Anda tetap dapat menggunakan portal dengan memilih <b>Nanti saja</b>. Pengingat ini akan tampil kembali saat login berikutnya sampai password berhasil diubah.</div>':''}`,reminder?`<span class="hint">Disarankan mengganti password awal untuk keamanan akun.</span><div class="actions"><button class="btn ghost" data-action="skip-password-change">Nanti saja</button><button class="btn primary" data-action="save-password">Simpan Password Baru</button></div>`:`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="save-password">Simpan</button></div>`);const back=$('modalBack');if(back){back.dataset.passwordPrompt=reminder?'1':'0';back.dataset.mandatoryPassword='0'}const closeBtn=back?.querySelector('.modalhead .close');if(closeBtn)closeBtn.style.display='';setTimeout(()=>$('pwCurrent')?.focus(),40)}
 function skipPasswordChangeV722(){if(S.forcePasswordChange)markPasswordPromptSkippedV722();closeModal(true)}
 async function savePassword(){const current=$('pwCurrent')?.value||'',next=$('pwNew')?.value||'',again=$('pwNew2')?.value||'';if(next!==again)return toast('Konfirmasi password tidak sama.',true);if(next.length<8)return toast('Password baru minimal 8 karakter.',true);if(current===next)return toast('Password baru harus berbeda dari password saat ini.',true);busy(true);try{await api('changeMyPassword',{currentPassword:current,newPassword:next});S.forcePasswordChange=false;clearPasswordPromptSkippedV722();if(S.boot?.user){S.boot.user.must_change_password=false;S.boot.user.password_changed_at=new Date().toISOString()}save();closeModal(true);toast('Password berhasil diperbarui.')}catch(e){toast(e.message,true)}finally{busy(false)}}
-function openModal(title,sub,body,foot){const back=$('modalBack');if(back){back.dataset.mandatoryPassword='0';back.dataset.passwordPrompt='0'}const closeBtn=back?.querySelector('.modalhead .close');if(closeBtn)closeBtn.style.display='';document.querySelector('#modalBack .modal')?.classList.remove('compact-modal');$('modalTitle').textContent=title;$('modalSub').textContent=sub||'';$('modalBody').innerHTML=body||'';$('modalFoot').innerHTML=foot||'';$('modalBack').classList.add('show');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('modalBack'))}
+function openModal(title,sub,body,foot){const back=$('modalBack');if(back){back.dataset.mandatoryPassword='0';back.dataset.passwordPrompt='0'}const closeBtn=back?.querySelector('.modalhead .close');if(closeBtn)closeBtn.style.display='';document.querySelector('#modalBack .modal')?.classList.remove('compact-modal');document.querySelector('#modalBack .modal')?.classList.remove('exam-rubric-modal');$('modalTitle').textContent=title;$('modalSub').textContent=sub||'';$('modalBody').innerHTML=body||'';$('modalFoot').innerHTML=foot||'';$('modalBack').classList.add('show');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('modalBack'))}
 function closeModal(force=false){const back=$('modalBack');if(!force&&S.forcePasswordChange&&back?.dataset?.passwordPrompt==='1')markPasswordPromptSkippedV722();S.cache.pendingSupervisorSubmissionV622=null;S.cache.pendingSupervisorDecisionV630=null;S.cache.pendingSupervisorCancelV630=null;S.cache.pendingInternshipCancelV630=null;S.cache.pendingGuidanceDeleteV713=null;S.cache.pendingLetterDeleteV713=null;S.cache.pendingAdminLetterDeleteV723=null;S.cache.pendingAdminLetterDeleteV724=null;S.cache.pendingBulkDownloadV721=null;if(back){back.dataset.mandatoryPassword='0';back.dataset.passwordPrompt='0';back.classList.remove('show');const closeBtn=back.querySelector('.modalhead .close');if(closeBtn)closeBtn.style.display=''}$('modalBody').innerHTML='';$('modalFoot').innerHTML=''}
 function closeUserMenuV670(){const menu=$('accountMenu'),drop=$('accountDropdown'),trigger=$('accountTrigger');menu?.classList.remove('open');drop?.classList.add('hidden');trigger?.setAttribute('aria-expanded','false')}
 function toggleUserMenuV670(){const menu=$('accountMenu'),drop=$('accountDropdown'),trigger=$('accountTrigger');if(!menu||!drop)return;const opening=drop.classList.contains('hidden');if(opening){menu.classList.add('open');drop.classList.remove('hidden');trigger?.setAttribute('aria-expanded','true')}else closeUserMenuV670()}
