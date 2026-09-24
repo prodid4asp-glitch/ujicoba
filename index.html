@@ -540,6 +540,69 @@ html:has(#app:not(.hidden)),body:has(#app:not(.hidden)){height:100%;overflow:hid
 .doc-count-grid-v727 b{display:block;font-size:17px;margin-top:4px}
 @media(max-width:800px){.doc-count-grid-v727{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+/* build 20260924-1325: sidebar bertingkat Skripsi / Magang */
+.nav-group{display:grid;gap:3px}
+.nav-group-toggle{position:relative;width:100%;font-weight:700}
+.nav-group-toggle .nav-caret{
+  margin-left:auto;
+  width:18px;
+  min-width:18px;
+  text-align:center;
+  font-size:11px;
+  opacity:.82;
+  transition:transform .16s ease;
+}
+.nav-group.open>.nav-group-toggle .nav-caret{transform:rotate(90deg)}
+.nav-group.active-parent>.nav-group-toggle{
+  background:rgba(255,255,255,.08);
+  color:#fff;
+}
+.nav-submenu{
+  display:none;
+  margin:0 0 3px 0;
+  padding-left:17px;
+  position:relative;
+  gap:2px;
+}
+.nav-group.open>.nav-submenu{display:grid}
+.nav-submenu:before{
+  content:"";
+  position:absolute;
+  left:22px;
+  top:2px;
+  bottom:6px;
+  width:1px;
+  background:rgba(215,232,236,.22);
+}
+.nav .nav-submenu button{
+  height:36px;
+  padding:0 9px 0 21px;
+  font-size:12px;
+  position:relative;
+}
+.nav .nav-submenu button .ico{
+  width:17px;
+  min-width:17px;
+  font-size:13px;
+}
+.nav .nav-submenu button:before{
+  content:"";
+  position:absolute;
+  left:5px;
+  top:50%;
+  width:9px;
+  height:1px;
+  background:rgba(215,232,236,.24);
+}
+.app.collapsed .nav-group-toggle .nav-caret,
+.app.collapsed .nav-submenu{display:none!important}
+.app.collapsed .nav-group{display:block}
+@media(max-width:760px){
+  .nav-submenu{padding-left:13px}
+  .nav .nav-submenu button{height:39px;font-size:12.5px}
+}
+
 </style>
 </head>
 <body>
@@ -737,11 +800,37 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('pageTitle','Dashboard');
       if(nav){
         var icons={dashboard:'⌂',supervisor:'♟',guidance:'▤',documents:'▱',proposal_seminar:'◫',thesis_exam:'▦',letters:'✉',internship:'▣',profile:'◎',admin:'⚙'};
-        nav.innerHTML=(boot.nav||[]).filter(function(n){return n&&n.id!=='reviews'&&n.id!=='assessment'&&!(user.role_id==='operator'&&n.id==='admin')}).map(function(n){
+        var items=(boot.nav||[]).filter(function(n){return n&&n.id!=='reviews'&&n.id!=='assessment'&&!(user.role_id==='operator'&&n.id==='admin')});
+        var thesisIds=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
+        function escNav(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
+        function childHtml(n){
           var id=String(n.id||'').replace(/[^a-z0-9_-]/gi,'');
-          var label=String(n.label||id).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]});
-          return '<button type="button" data-page="'+id+'"'+(id==='dashboard'?' class="active"':'')+'><span class="ico">'+(icons[id]||'•')+'</span><span class="navlabel">'+label+'</span></button>';
-        }).join('');
+          return '<button type="button" data-page="'+id+'"><span class="ico">'+(icons[id]||'•')+'</span><span class="navlabel">'+escNav(n.label||id)+'</span></button>';
+        }
+        var used={};
+        var parts=[];
+        items.forEach(function(n){
+          if(used[n.id])return;
+          if(thesisIds.indexOf(n.id)>=0){
+            var kids=items.filter(function(x){return thesisIds.indexOf(x.id)>=0});
+            kids.forEach(function(x){used[x.id]=1});
+            if(kids.length)parts.push('<div class="nav-group" data-nav-group="skripsi"><button type="button" class="nav-group-toggle" data-nav-toggle="skripsi" aria-expanded="false"><span class="ico">▤</span><span class="navlabel">Skripsi</span><span class="nav-caret">›</span></button><div class="nav-submenu">'+kids.map(childHtml).join('')+'</div></div>');
+            return;
+          }
+          if(n.id==='internship'){
+            used[n.id]=1;
+            parts.push('<div class="nav-group" data-nav-group="magang"><button type="button" class="nav-group-toggle" data-nav-toggle="magang" aria-expanded="false"><span class="ico">▣</span><span class="navlabel">Magang</span><span class="nav-caret">›</span></button><div class="nav-submenu">'+childHtml({id:'internship',label:'Pengajuan Magang'})+'</div></div>');
+            return;
+          }
+          used[n.id]=1;
+          var id=String(n.id||'').replace(/[^a-z0-9_-]/gi,'');
+          var label=escNav(n.label||id);
+          parts.push('<button type="button" data-page="'+id+'"'+(id==='dashboard'?' class="active"':'')+'><span class="ico">'+(icons[id]||'•')+'</span><span class="navlabel">'+label+'</span></button>');
+        });
+        nav.innerHTML=parts.join('');
+        nav.querySelectorAll('[data-nav-toggle]').forEach(function(btn){
+          btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}var g=btn.closest('.nav-group');if(!g)return;var open=!g.classList.contains('open');g.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));};
+        });
       }
       if(content)content.innerHTML='<section class="hero"><h3>Login berhasil</h3><p>Portal siap digunakan. Dashboard dimuat lebih dulu; menu lain tetap dapat langsung diklik kapan saja.</p></section><div class="card" style="margin-top:14px"><div class="hint">Fast Login v4.7 aktif. Tombol memakai direct binding; tidak bergantung pada satu event-router global.</div></div>';
       if(app)app.classList.remove('hidden');
@@ -881,7 +970,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20260922-1120';
+const INTERNAL_BUILD_V720='20260924-1325';
 const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
@@ -1058,8 +1147,53 @@ if(window.__pendingPortalLoginV52){
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
 function isPageAllowed(p){if(String(S.boot?.user?.role_id||'')==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
-function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment')S.page='dashboard';if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin'));$('nav').innerHTML=nav.map(n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.label)}</span></button>`).join('');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
-function markNav(){document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));$('pageTitle').textContent=LABEL[S.page]||'Portal'}
+const NAV_THESIS_IDS_V726=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
+function groupedNavHtmlV726(nav){
+ const used=new Set(),parts=[];
+ const child=n=>`<button type="button" data-page="${attr(n.id)}"><span class="ico">${ICO[n.id]||'•'}</span><span class="navlabel">${esc(n.id==='internship'?'Pengajuan Magang':(n.label||LABEL[n.id]||n.id))}</span></button>`;
+ for(const n of nav){
+   if(!n||used.has(n.id))continue;
+   if(NAV_THESIS_IDS_V726.includes(n.id)){
+     const kids=nav.filter(x=>NAV_THESIS_IDS_V726.includes(x.id));
+     kids.forEach(x=>used.add(x.id));
+     if(kids.length)parts.push(`<div class="nav-group" data-nav-group="skripsi"><button type="button" class="nav-group-toggle" data-nav-toggle="skripsi" aria-expanded="false"><span class="ico">▤</span><span class="navlabel">Skripsi</span><span class="nav-caret">›</span></button><div class="nav-submenu">${kids.map(child).join('')}</div></div>`);
+     continue;
+   }
+   if(n.id==='internship'){
+     used.add(n.id);
+     parts.push(`<div class="nav-group" data-nav-group="magang"><button type="button" class="nav-group-toggle" data-nav-toggle="magang" aria-expanded="false"><span class="ico">▣</span><span class="navlabel">Magang</span><span class="nav-caret">›</span></button><div class="nav-submenu">${child({...n,label:'Pengajuan Magang'})}</div></div>`);
+     continue;
+   }
+   used.add(n.id);
+   parts.push(child(n));
+ }
+ return parts.join('');
+}
+function toggleNavGroupV726(name,force){
+ const group=document.querySelector(`#nav .nav-group[data-nav-group="${CSS.escape(String(name||''))}"]`);if(!group)return;
+ const open=force===undefined?!group.classList.contains('open'):!!force;
+ group.classList.toggle('open',open);
+ group.querySelector(':scope > .nav-group-toggle')?.setAttribute('aria-expanded',String(open));
+}
+function bindNavGroupsV726(){
+ document.querySelectorAll('#nav [data-nav-toggle]').forEach(btn=>{
+   btn.onclick=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();toggleNavGroupV726(btn.dataset.navToggle)};
+ });
+}
+function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment')S.page='dashboard';if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin'));$('nav').innerHTML=groupedNavHtmlV726(nav);if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));bindNavGroupsV726();const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
+function markNav(){
+ document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));
+ document.querySelectorAll('#nav .nav-group').forEach(g=>g.classList.remove('active-parent'));
+ let activeGroup='';
+ if(NAV_THESIS_IDS_V726.includes(S.page))activeGroup='skripsi';
+ else if(S.page==='internship')activeGroup='magang';
+ if(activeGroup){
+   const g=document.querySelector(`#nav .nav-group[data-nav-group="${activeGroup}"]`);
+   g?.classList.add('active-parent');
+   toggleNavGroupV726(activeGroup,true);
+ }
+ $('pageTitle').textContent=LABEL[S.page]||'Portal'
+}
 async function login(e){
   // v4.7: satu-satunya jalur login adalah bootstrap kecil di atas.
   if(typeof window.portalLoginV52==='function')return window.portalLoginV52(e);
