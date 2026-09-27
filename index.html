@@ -1513,7 +1513,7 @@ function dashboardExamFieldsV725(rows){
 }
 function dashboardExamSelectOptionsV725(options,current){return options.map(x=>`<option value="${attr(x)}" ${x===current?'selected':''}>${esc(x)}</option>`).join('')}
 function dashboardExamRowsHtmlV725(rows){
-  const cols=[['tanggal','Tanggal',v=>esc(dashboardExamDateTextV725(v))],['waktu','Waktu'],['sesi','Sesi'],['prodi','Prodi'],['ruang','Ruang / BR'],['mahasiswa','Mahasiswa'],['nim','NIM'],['judul','Judul Skripsi'],['pembimbing','Pembimbing'],['ketua_penguji','Ketua Penguji'],['anggota_penguji_1','Anggota Penguji 1'],['anggota_penguji_2','Anggota Penguji 2']];
+  const cols=[['tanggal','Tanggal',v=>esc(dashboardExamDateTextV725(v))],['waktu','Waktu'],['sesi','Sesi'],['prodi','Prodi'],['ruang','Ruang'],['mahasiswa','Mahasiswa'],['nim','NIM'],['judul','Judul Skripsi'],['pembimbing','Pembimbing'],['ketua_penguji','Ketua Penguji'],['anggota_penguji_1','Anggota Penguji 1'],['anggota_penguji_2','Anggota Penguji 2']];
   // Keep columns that exist in the physical table, even when their names differ.
   const visible=cols.filter(c=>rows.some(r=>String(r[c[0]]??'').trim()!==''));
   // Source may be empty after filters; use original dataset's columns instead (caller supplies all rows separately).
