@@ -891,7 +891,7 @@ window.PORTAL_CONFIG=Object.freeze({
       setText('pageTitle',restrictedExamRole?'Ujian Skripsi':'Dashboard');
       if(nav){
         var icons={dashboard:'⌂',supervisor:'♟',guidance:'▤',documents:'▱',proposal_seminar:'◫',thesis_exam:'▦',letters:'✉',internship:'▣',profile:'◎',admin:'⚙'};
-        var items=(boot.nav||[]).filter(function(n){return n&&n.id!=='reviews'&&n.id!=='assessment'&&!(user.role_id==='operator'&&n.id==='admin')});
+        var items=(boot.nav||[]).filter(function(n){if(!n||n.id==='reviews'||n.id==='assessment'||(user.role_id==='operator'&&n.id==='admin'))return false;return !restrictedExamRole||n.id==='thesis_exam'||n.id==='profile';});
         var thesisIds=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
         function escNav(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
         function childHtml(n){
@@ -923,7 +923,7 @@ window.PORTAL_CONFIG=Object.freeze({
           btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}var g=btn.closest('.nav-group');if(!g)return;var open=!g.classList.contains('open');g.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));};
         });
       }
-      var profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.toggle('hidden',restrictedExamRole);
+      var profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.remove('hidden');
       if(content)content.innerHTML=restrictedExamRole?'<div class="card"><h3>Ujian Skripsi</h3><p class="hint">Menyiapkan data Ujian Skripsi…</p></div>':'<section class="hero"><h3>Login berhasil</h3><p>Portal siap digunakan. Dashboard dimuat lebih dulu; menu lain tetap dapat langsung diklik kapan saja.</p></section><div class="card" style="margin-top:14px"><div class="hint">Fast Login v4.7 aktif. Tombol memakai direct binding; tidak bergantung pada satu event-router global.</div></div>';
       if(app)app.classList.remove('hidden');
       if(login)login.classList.add('hidden');
@@ -1240,7 +1240,7 @@ if(window.__pendingPortalLoginV52){
 }
 function restrictedExamRoleV750(role=S.boot?.user?.role_id||''){return ['lecturer','student'].includes(String(role||''))}
 function landingPageV750(role=S.boot?.user?.role_id||''){return restrictedExamRoleV750(role)?'thesis_exam':'dashboard'}
-function isPageAllowed(p){const role=String(S.boot?.user?.role_id||'');if(restrictedExamRoleV750(role))return p==='thesis_exam';if(role==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
+function isPageAllowed(p){const role=String(S.boot?.user?.role_id||'');if(restrictedExamRoleV750(role))return p==='thesis_exam'||p==='profile';if(role==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
 const NAV_THESIS_IDS_V726=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
 function groupedNavHtmlV726(nav){
  const used=new Set(),parts=[];
@@ -1274,7 +1274,7 @@ function bindNavGroupsV726(){
    btn.onclick=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();toggleNavGroupV726(btn.dataset.navToggle)};
  });
 }
-function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment'||!isPageAllowed(S.page))S.page=landingPageV750(u.role_id);if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin'));$('nav').innerHTML=groupedNavHtmlV726(nav);const profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.toggle('hidden',restrictedExamRoleV750(u.role_id));if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));bindNavGroupsV726();const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
+function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment'||!isPageAllowed(S.page))S.page=landingPageV750(u.role_id);if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const focused=restrictedExamRoleV750(u.role_id),nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin')&&(!focused||n.id==='thesis_exam'||n.id==='profile'));$('nav').innerHTML=groupedNavHtmlV726(nav);const profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.remove('hidden');if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));bindNavGroupsV726();const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
 function markNav(){
  document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));
  document.querySelectorAll('#nav .nav-group').forEach(g=>g.classList.remove('active-parent'));
@@ -2254,10 +2254,12 @@ async function uploadDocument(){const f=$('dFile')?.files?.[0],hasRevision=!!$('
 function openDocumentReviewV636(id){const r=(S.cache.documentBundleV620?.documents||[]).find(x=>String(x.document_id)===String(id));if(!r||!r.can_review)return toast('Anda tidak berwenang menilai dokumen ini.',true);const supervisor=r.my_review_role==='SUPERVISOR',role={SUPERVISOR:'Dosen Pembimbing',CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'}[r.my_review_role]||'Dosen';const body=`<div class="subtlebox"><b>${esc(r.student_name||r.student_id)}</b><br>${esc(DOCUMENT_LABEL[r.document_type]||r.document_type)} · <a href="${attr(r.file_url)}" target="_blank" rel="noopener">Buka dokumen</a></div><div class="formgrid" style="margin-top:14px"><div class="field"><label>Persetujuan <span class="req">*</span></label><select id="drDecision"><option value="">Pilih keputusan</option><option value="APPROVED">Disetujui</option><option value="REJECTED">Tidak Disetujui</option></select></div>${supervisor?'<div class="field"><label>Kelayakan Sidang <span class="req">*</span></label><select id="drEligibility"><option value="">Pilih kelayakan</option><option value="LAYAK">Layak Sidang</option><option value="TIDAK_LAYAK">Tidak Layak Sidang</option></select></div>':''}<div class="field span2"><label>Catatan ${esc(role)} <span class="req">*</span></label><textarea id="drNote" style="min-height:150px" placeholder="Catatan wajib diisi"></textarea></div></div>`;openModal('Persetujuan Dokumen',role,body,`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="save-document-review" data-id="${attr(id)}">Simpan Persetujuan</button></div>`)}
 async function saveDocumentReviewV636(id){if(!val('drDecision')||!val('drNote'))return toast('Keputusan dan catatan wajib diisi.',true);const doc=(S.cache.documentBundleV620?.documents||[]).find(x=>String(x.document_id)===String(id));if(doc?.my_review_role==='SUPERVISOR'&&!val('drEligibility'))return toast('Kelayakan sidang wajib dipilih.',true);busy(true);try{const result=await api('reviewDocument',{document_id:id,decision:val('drDecision'),eligibility:val('drEligibility'),note:val('drNote')});closeModal();const next=Object.assign({},S.cache.documentBundleV620||{},{documents:result.documents||[]});S.cache.documentBundleV620=next;renderDocuments(next);toast('Persetujuan dan catatan berhasil disimpan.')}catch(e){toast(e.message,true)}finally{busy(false)}}
 
-function legacyExamNotesHtmlV750(notes){
- const list=Array.isArray(notes)?notes:[];
- if(!list.length)return'';
- return `<div class="legacy-exam-notes-v750"><div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan sidang yang tersimpan.</div>${list.map((item,i)=>{const rawDate=String(item?.date||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>${esc(date)}</p>`:''}</div>${item?.status?`<span class="badge COMPLETED">${esc(item.status)}</span>`:''}</div><div class="subtlebox" style="white-space:pre-wrap">${esc(item?.note||'Sidang skripsi telah tercatat.')}</div></div>`}).join('')}</div>`;
+function legacyExamNotesHtmlV750(notes,hasSchedule=false){
+ const list=Array.isArray(notes)?notes:[];if(!list.length)return'';
+ const intro=hasSchedule
+  ?'<div class="notice show success"><b>Catatan sidang skripsi ditemukan.</b><br>Catatan berikut berasal dari data historis sidang mahasiswa.</div>'
+  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan sidang yang tersimpan.</div>';
+ return `<div class="legacy-exam-notes-v750">${intro}${list.map((item,i)=>{const rawDate=String(item?.date||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>${esc(date)}</p>`:''}</div>${item?.status?`<span class="badge COMPLETED">${esc(item.status)}</span>`:''}</div><div class="subtlebox" style="white-space:pre-wrap">${esc(item?.note||'Sidang skripsi telah tercatat.')}</div></div>`}).join('')}</div>`;
 }
 function renderAcademicSchedule(b,eventType){
  if(['lecturer','admin'].includes(operationalUiRoleV720())&&b.menteeRoster)return renderMentee661(eventType,b);
@@ -2274,8 +2276,9 @@ function renderAcademicSchedule(b,eventType){
  const reviewTable=reviewRows.length?table(reviewRows,[['event_date','Tanggal',scheduleDateLongV720],['student_name','Mahasiswa'],['reviewer_name','Dosen Penilai'],['review_note','Masukan dan Saran',(v)=>`<div class="review-note">${esc(v||'-')}</div>`],['decision','Keputusan',(v)=>esc(decisionLabel(v))],['score','Nilai',(v)=>esc(v||'-')],['reviewed_at','Waktu Review',dt],['student_feedback','Tanggapan Mahasiswa',(v)=>`<div class="review-feedback">${esc(v||'Belum ada tanggapan')}</div>`],['student_feedback_at','Waktu Tanggapan',dt]],reviewActions):'<div class="card empty">Belum ada saran masukan dosen untuk jadwal ini.</div>';
  const years=Array.from(new Set([...(options.academicYears||[]),...allRows.map(r=>r.academic_year)].filter(Boolean))),semesters=Array.from(new Set([...(options.semesters||[]).map(x=>String(x)==='Ganjil'?'Gasal':x),'Gasal','Genap'].filter(Boolean)));
  const periodFilter=studentOnly?'':`<div class="filterbar"><div class="field"><label>Cari Jadwal</label><input id="scheduleSearch" type="search" value="${attr(search)}" placeholder="Nama, NIM, judul, dosen, prodi, ruang..."></div><div class="field"><label>Tahun Akademik</label><select id="scheduleAcademicYear"><option value="">Semua Tahun Akademik</option>${years.map(x=>`<option value="${attr(x)}" ${String(x)===String(selectedYear)?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="scheduleSemester"><option value="">Semua Semester</option>${semesters.map(x=>`<option value="${attr(x)}" ${String(x)===String(selectedSemester)?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="filter-count">${rows.length} dari ${allRows.length} jadwal</div></div>`;
- const legacyExamNotes=studentOnly&&!isProposal&&!allRows.length?(b.legacyExamNotes||[]):[];
- const scheduleCards=legacyExamNotes.length?legacyExamNotesHtmlV750(legacyExamNotes):scheduleCardsV642(rows,b,isProposal,downloadLabel,actions);
+ const legacyExamNotes=studentOnly&&!isProposal?(b.legacyExamNotes||[]):[];
+ const baseScheduleCards=scheduleCardsV642(rows,b,isProposal,downloadLabel,actions);
+ const scheduleCards=!allRows.length&&legacyExamNotes.length?legacyExamNotesHtmlV750(legacyExamNotes,false):(baseScheduleCards+(legacyExamNotes.length?legacyExamNotesHtmlV750(legacyExamNotes,true):''));
  $('content').innerHTML=`<section class="section">${b.canManage?`<div class="sectionhead"><span></span><div class="toolbar"><button class="btn primary" data-action="schedule-add">+ Tambah Jadwal</button><button class="btn secondary" data-action="schedule-bulk" data-type="${attr(eventType)}">Bulk CSV</button></div></div>`:''}${periodFilter}${scheduleCards}</section>${isProposal?`<section class="section"><div class="sectionhead"><div><h3>Saran Masukan Dosen dan Tanggapan Mahasiswa</h3><p>Masukan dosen ditampilkan bersama tanggapan mahasiswa pada jadwal yang sama.</p></div></div>${reviewTable}</section>`:''}`;restoreDetailStatesV632($('content'));
 }
 function scoreLetterV639(value){if(value===null||value===undefined||String(value).trim()===''||String(value)==='-')return'-';const n=Number(value);if(!Number.isFinite(n))return'-';return n>=86?'A':n>=80?'A-':n>=75?'B+':n>=70?'B':n>=66?'B-':n>=61?'C+':n>=56?'C':n>=41?'D':'E'}
@@ -3062,7 +3065,7 @@ async function ensureSupabaseRealtimeV630(){
  supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
  supabaseRealtimeClientV630.realtime.setAuth(S.token);
  const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
- const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_academicschedules','portal_thesis_exam_scores','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
+ const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_academicschedules','portal_catatansidang','portal_thesis_exam_scores','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
  for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
  supabaseRealtimeChannelV630=ch.subscribe();
 }
@@ -3073,7 +3076,7 @@ function scheduleSupabaseRefreshV632(payload){
   (table==='portal_guidance'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
   (['portal_academic_schedules','portal_academicschedules'].includes(table)&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
-  (table==='portal_thesis_exam_scores'&&page==='thesis_exam')||
+  (['portal_catatansidang','portal_thesis_exam_scores'].includes(table)&&page==='thesis_exam')||
   (table==='portal_research_letters'&&['dashboard','letters'].includes(page))||
   (table==='portal_internship_applications'&&['dashboard','internship'].includes(page))||
   (table==='portal_config'&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam','admin'].includes(page))||
