@@ -704,7 +704,7 @@ window.PORTAL_CONFIG=Object.freeze({
   SUPABASE_URL:'https://qhjgezhrhlkhbnvqjqkp.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_bk3wDu5HgzSpH1FtY_TrEQ_GVsgkAlY',
   CSV_URL:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsDcY7dlj3xzz7LdCeCkfIO6GxHls5TtdKB6u-p8vtKM69SINdz_e2URadoJR3d5_ChAtFr7RV5rPT/pub?output=csv',
-  VERSION:'6.72.0' // build 20260921-2335
+  VERSION:'6.72.0' // build 20260929-2300
 });
 
 (function(){
@@ -833,7 +833,7 @@ window.PORTAL_CONFIG=Object.freeze({
       <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.0</div>
     </div>
   </div>
-  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu ♥️</h2></div></div>
+  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
 </section>
 
 <!-- v4.7: LOGIN BOOTSTRAP MANDIRI.
@@ -875,8 +875,10 @@ window.PORTAL_CONFIG=Object.freeze({
       var nav=document.getElementById('nav');
       function setText(id,text){var el=document.getElementById(id);if(el)el.textContent=text||'';}
       var expiresAt=Number(result&&result.sessionExpiresAt)||Date.now()+24*60*60*1000;
-      try{localStorage.setItem('portal_v60_token',String(result.token||''));localStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));localStorage.setItem('portal_v60_boot',JSON.stringify(boot));localStorage.setItem('portal_v60_page','dashboard');localStorage.setItem('portal_v60_expires',String(expiresAt));}catch(_){
-        try{sessionStorage.setItem('portal_v60_token',String(result.token||''));sessionStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));sessionStorage.setItem('portal_v60_boot',JSON.stringify(boot));sessionStorage.setItem('portal_v60_page','dashboard');sessionStorage.setItem('portal_v60_expires',String(expiresAt));}catch(__){}
+      var restrictedExamRole=['lecturer','student'].indexOf(String(user.role_id||''))>=0;
+      var landingPage=restrictedExamRole?'thesis_exam':'dashboard';
+      try{localStorage.setItem('portal_v60_token',String(result.token||''));localStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));localStorage.setItem('portal_v60_boot',JSON.stringify(boot));localStorage.setItem('portal_v60_page',landingPage);localStorage.setItem('portal_v60_expires',String(expiresAt));}catch(_){
+        try{sessionStorage.setItem('portal_v60_token',String(result.token||''));sessionStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));sessionStorage.setItem('portal_v60_boot',JSON.stringify(boot));sessionStorage.setItem('portal_v60_page',landingPage);sessionStorage.setItem('portal_v60_expires',String(expiresAt));}catch(__){}
       }
       setText('brandTitle',(boot.config&&boot.config.APP_TITLE)||(boot.app&&boot.app.name)||'Skripsi & Magang');
       setText('brandOrg',(boot.config&&boot.config.INSTITUTION_NAME)||'');
@@ -886,7 +888,7 @@ window.PORTAL_CONFIG=Object.freeze({
       var roles={admin:'Admin / Prodi',operator:'Operator',lecturer:'Dosen',student:'Mahasiswa',monitor:'Monitor / Rekap'};
       setText('userRole',roles[user.role_id]||user.role_id||'');
       setText('avatar',String(user.name||user.username||'U').charAt(0).toUpperCase());
-      setText('pageTitle','Dashboard');
+      setText('pageTitle',restrictedExamRole?'Ujian Skripsi':'Dashboard');
       if(nav){
         var icons={dashboard:'⌂',supervisor:'♟',guidance:'▤',documents:'▱',proposal_seminar:'◫',thesis_exam:'▦',letters:'✉',internship:'▣',profile:'◎',admin:'⚙'};
         var items=(boot.nav||[]).filter(function(n){return n&&n.id!=='reviews'&&n.id!=='assessment'&&!(user.role_id==='operator'&&n.id==='admin')});
@@ -921,7 +923,8 @@ window.PORTAL_CONFIG=Object.freeze({
           btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation()}var g=btn.closest('.nav-group');if(!g)return;var open=!g.classList.contains('open');g.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));};
         });
       }
-      if(content)content.innerHTML='<section class="hero"><h3>Login berhasil</h3><p>Portal siap digunakan. Dashboard dimuat lebih dulu; menu lain tetap dapat langsung diklik kapan saja.</p></section><div class="card" style="margin-top:14px"><div class="hint">Fast Login v4.7 aktif. Tombol memakai direct binding; tidak bergantung pada satu event-router global.</div></div>';
+      var profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.toggle('hidden',restrictedExamRole);
+      if(content)content.innerHTML=restrictedExamRole?'<div class="card"><h3>Ujian Skripsi</h3><p class="hint">Menyiapkan data Ujian Skripsi…</p></div>':'<section class="hero"><h3>Login berhasil</h3><p>Portal siap digunakan. Dashboard dimuat lebih dulu; menu lain tetap dapat langsung diklik kapan saja.</p></section><div class="card" style="margin-top:14px"><div class="hint">Fast Login v4.7 aktif. Tombol memakai direct binding; tidak bergantung pada satu event-router global.</div></div>';
       if(app)app.classList.remove('hidden');
       if(login)login.classList.add('hidden');
       return true;
@@ -1059,7 +1062,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20260925-0100';
+const INTERNAL_BUILD_V720='20260929-2300';
 const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
@@ -1209,8 +1212,8 @@ function enter(r,restore=false){
   S.expiresAt=Number(r?.sessionExpiresAt)||S.expiresAt||Date.now()+SESSION_TTL_MS;
   if(!S.token)throw new Error('Token login tidak diterima dari backend.');
   if(!S.boot?.user)throw new Error('Data pengguna/menu tidak diterima dari backend.');
-  if(!restore){clearPasswordPromptSkippedV722();S.page='dashboard';S.adminTab='config';S.lastView=null;sessionRemove(K.lastView);S.workspace.pages={};S.workspace.pageSynced={};S.workspace.adminTabs={};}
-  else if(!isPageAllowed(S.page))S.page='dashboard';
+  if(!restore){clearPasswordPromptSkippedV722();S.page=landingPageV750();S.adminTab='config';S.lastView=null;sessionRemove(K.lastView);S.workspace.pages={};S.workspace.pageSynced={};S.workspace.adminTabs={};}
+  else if(!isPageAllowed(S.page))S.page=landingPageV750();
   try{
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');finishStartupV62();save();
     if(!restore||!renderRememberedViewV52())$('content').innerHTML=`<div class="card"><h3>Memuat ${esc(LABEL[S.page]||S.page)}…</h3><p class="hint">Portal sudah siap. Hanya data halaman ini yang diprioritaskan.</p></div>`;
@@ -1235,7 +1238,9 @@ if(window.__pendingPortalLoginV52){
   const pending=window.__pendingPortalLoginV52;
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
-function isPageAllowed(p){if(String(S.boot?.user?.role_id||'')==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
+function restrictedExamRoleV750(role=S.boot?.user?.role_id||''){return ['lecturer','student'].includes(String(role||''))}
+function landingPageV750(role=S.boot?.user?.role_id||''){return restrictedExamRoleV750(role)?'thesis_exam':'dashboard'}
+function isPageAllowed(p){const role=String(S.boot?.user?.role_id||'');if(restrictedExamRoleV750(role))return p==='thesis_exam';if(role==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
 const NAV_THESIS_IDS_V726=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
 function groupedNavHtmlV726(nav){
  const used=new Set(),parts=[];
@@ -1269,7 +1274,7 @@ function bindNavGroupsV726(){
    btn.onclick=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();toggleNavGroupV726(btn.dataset.navToggle)};
  });
 }
-function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment')S.page='dashboard';if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin'));$('nav').innerHTML=groupedNavHtmlV726(nav);if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));bindNavGroupsV726();const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
+function renderShell(){const b=S.boot,u=b.user;if(S.page==='assessment'||!isPageAllowed(S.page))S.page=landingPageV750(u.role_id);if(S.workspace?.pages)delete S.workspace.pages.assessment;document.body.querySelector('#app').classList.toggle('collapsed',S.collapsed);$('brandTitle').textContent='Skripsi & Magang';$('brandOrg').textContent=b.config?.INSTITUTION_NAME||'';$('academicYear').textContent=(b.config?.ACTIVE_SEMESTER?('Semester '+b.config.ACTIVE_SEMESTER+' · '):'')+'Tahun akademik '+(b.config?.ACADEMIC_YEAR||'2026/2027');$('version').textContent='Versi '+window.PORTAL_CONFIG.VERSION;$('userName').textContent=u.name||u.username;$('userRole').textContent=ROLE[u.role_id]||u.role_id;$('avatar').textContent=(u.name||u.username||'U')[0].toUpperCase();const nav=(S.boot.nav||[]).filter(n=>n.id!=='reviews'&&n.id!=='assessment'&&!(u.role_id==='operator'&&n.id==='admin'));$('nav').innerHTML=groupedNavHtmlV726(nav);const profileAction=document.querySelector('#accountDropdown [data-page="profile"]');if(profileAction)profileAction.classList.toggle('hidden',restrictedExamRoleV750(u.role_id));if(window.__bindPortalDomV52)window.__bindPortalDomV52($('nav'));bindNavGroupsV726();const tg=$('sideToggle');if(tg){tg.textContent=S.collapsed?'☰':'☰';tg.title=S.collapsed?'Perbesar sidebar':'Sembunyikan sidebar'}markNav()}
 function markNav(){
  document.querySelectorAll('#nav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===S.page));
  document.querySelectorAll('#nav .nav-group').forEach(g=>g.classList.remove('active-parent'));
@@ -1296,7 +1301,7 @@ async function resume(){
   if(!S.token||!S.boot?.user){$('app').classList.add('hidden');$('loginPage').classList.remove('hidden');finishStartupV62();return;}
   if(S.expiresAt&&S.expiresAt<=Date.now()&&!S.refreshToken)return showLogin('Sesi login telah berakhir. Silakan masuk kembali.');
   try{
-    if(!isPageAllowed(S.page))S.page='dashboard';
+    if(!isPageAllowed(S.page))S.page=landingPageV750();
     renderShell();$('app').classList.remove('hidden');$('loginPage').classList.add('hidden');markNav();
     S.forcePasswordChange=mustForcePasswordChangeV722({boot:S.boot});if(S.forcePasswordChange)enforcePasswordChangeV722();
     let hadCache=renderRememberedViewV52();
@@ -1334,7 +1339,7 @@ async function refreshPageV52(page,showError=true){
 }
 async function loadPage(page,force=false){
   closeUserMenuV670();
-  page=isPageAllowed(page)?page:'dashboard';const previousPage=S.page;if(previousPage!==page){S.prefetchGeneration=(S.prefetchGeneration||0)+1;resetPageComposerV64(page)}if(page!=='documents')stopDocumentsRealtimeV620();if(page!=='supervisor')stopSupervisorRealtimeV621();if(page!=='internship')stopInternshipRealtimeV622();S.page=page;save();markNav();$('sidebar').classList.remove('mobile-open');document.body.classList.remove('mobile-sidebar-open');
+  page=isPageAllowed(page)?page:landingPageV750();const previousPage=S.page;if(previousPage!==page){S.prefetchGeneration=(S.prefetchGeneration||0)+1;resetPageComposerV64(page)}if(page!=='documents')stopDocumentsRealtimeV620();if(page!=='supervisor')stopSupervisorRealtimeV621();if(page!=='internship')stopInternshipRealtimeV622();S.page=page;save();markNav();$('sidebar').classList.remove('mobile-open');document.body.classList.remove('mobile-sidebar-open');
   if(page==='admin'){
     renderAdminShell();
     const cachedTab=S.workspace.adminTabs?.[S.adminTab];
@@ -1555,7 +1560,7 @@ function renderLecturerExamDashboardV725(data){
   const rows=dashboardExamStableRowsV725(data),state=S.cache.dashboardExamFiltersV725||{q:'',prodi:'',year:'',semester:'',tanggal:'',sesi:'',ruang:'',page:0};
   S.cache.dashboardExamFiltersV725=state;
   const opts=dashboardExamFieldsV725(rows);
-  let html=`<section class="section lecturer-exam-dashboard" id="lecturerExamDashboard725"><div class="sectionhead"><div><h3>Jadwal Ujian Skripsi</h3><p></p></div><button type="button" class="btn secondary" data-exam-refresh725>Muat ulang</button></div>`;
+  let html=`<section class="section lecturer-exam-dashboard" id="lecturerExamDashboard725"><div class="sectionhead"><div><h3>Jadwal Ujian Skripsi</h3><p>Sumber operasional: <code>${esc(data?.source||'portal_academicschedules')}</code>. Pembaruan jadwal pada menu Ujian Skripsi langsung menggunakan sumber data yang sama.</p></div><button type="button" class="btn secondary" data-exam-refresh725>Muat ulang</button></div>`;
   if(data?.error){html+=`<div class="alert">${esc(data.error)}</div></section>`;return html}
   html+=`<div class="lecturer-exam-tools"><div class="field"><label for="dashboardExamSearch725">Cari jadwal</label><input id="dashboardExamSearch725" data-exam-filter725="q" type="search" value="${attr(state.q)}" placeholder="Nama mahasiswa, judul, dosen, NIM, ruang..."></div><div class="field"><label for="dashboardExamProdi725">Prodi</label><select id="dashboardExamProdi725" data-exam-filter725="prodi"><option value="">Semua prodi</option>${dashboardExamSelectOptionsV725(opts.programs,state.prodi)}</select></div><div class="field"><label for="dashboardExamYear727">Tahun akademik</label><select id="dashboardExamYear727" data-exam-filter725="year"><option value="">Semua tahun</option>${dashboardExamSelectOptionsV725(opts.years,state.year)}</select></div><div class="field"><label for="dashboardExamSemester727">Semester</label><select id="dashboardExamSemester727" data-exam-filter725="semester"><option value="">Semua semester</option>${dashboardExamSelectOptionsV725(opts.semesters,state.semester)}</select></div><div class="field"><label for="dashboardExamDate725">Tanggal</label><select id="dashboardExamDate725" data-exam-filter725="tanggal"><option value="">Semua tanggal</option>${opts.dates.map(([v,label])=>`<option value="${attr(v)}" ${state.tanggal===v?'selected':''}>${esc(label)}</option>`).join('')}</select></div><div class="field"><label for="dashboardExamSesi725">Sesi</label><select id="dashboardExamSesi725" data-exam-filter725="sesi"><option value="">Semua sesi</option>${dashboardExamSelectOptionsV725(opts.sessions,state.sesi)}</select></div><div class="field"><label for="dashboardExamRuang725">Ruang</label><select id="dashboardExamRuang725" data-exam-filter725="ruang"><option value="">Semua ruang</option>${dashboardExamSelectOptionsV725(opts.rooms,state.ruang)}</select></div></div><div class="lecturer-exam-result-head"><span data-exam-summary725></span><button type="button" class="btn ghost small" data-exam-reset725>Reset pencarian & filter</button></div><div data-exam-results725></div></section>`;
   return html;
@@ -2249,6 +2254,11 @@ async function uploadDocument(){const f=$('dFile')?.files?.[0],hasRevision=!!$('
 function openDocumentReviewV636(id){const r=(S.cache.documentBundleV620?.documents||[]).find(x=>String(x.document_id)===String(id));if(!r||!r.can_review)return toast('Anda tidak berwenang menilai dokumen ini.',true);const supervisor=r.my_review_role==='SUPERVISOR',role={SUPERVISOR:'Dosen Pembimbing',CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1',EXAMINER_2:'Anggota Penguji 2'}[r.my_review_role]||'Dosen';const body=`<div class="subtlebox"><b>${esc(r.student_name||r.student_id)}</b><br>${esc(DOCUMENT_LABEL[r.document_type]||r.document_type)} · <a href="${attr(r.file_url)}" target="_blank" rel="noopener">Buka dokumen</a></div><div class="formgrid" style="margin-top:14px"><div class="field"><label>Persetujuan <span class="req">*</span></label><select id="drDecision"><option value="">Pilih keputusan</option><option value="APPROVED">Disetujui</option><option value="REJECTED">Tidak Disetujui</option></select></div>${supervisor?'<div class="field"><label>Kelayakan Sidang <span class="req">*</span></label><select id="drEligibility"><option value="">Pilih kelayakan</option><option value="LAYAK">Layak Sidang</option><option value="TIDAK_LAYAK">Tidak Layak Sidang</option></select></div>':''}<div class="field span2"><label>Catatan ${esc(role)} <span class="req">*</span></label><textarea id="drNote" style="min-height:150px" placeholder="Catatan wajib diisi"></textarea></div></div>`;openModal('Persetujuan Dokumen',role,body,`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Batal</button><button class="btn primary" data-action="save-document-review" data-id="${attr(id)}">Simpan Persetujuan</button></div>`)}
 async function saveDocumentReviewV636(id){if(!val('drDecision')||!val('drNote'))return toast('Keputusan dan catatan wajib diisi.',true);const doc=(S.cache.documentBundleV620?.documents||[]).find(x=>String(x.document_id)===String(id));if(doc?.my_review_role==='SUPERVISOR'&&!val('drEligibility'))return toast('Kelayakan sidang wajib dipilih.',true);busy(true);try{const result=await api('reviewDocument',{document_id:id,decision:val('drDecision'),eligibility:val('drEligibility'),note:val('drNote')});closeModal();const next=Object.assign({},S.cache.documentBundleV620||{},{documents:result.documents||[]});S.cache.documentBundleV620=next;renderDocuments(next);toast('Persetujuan dan catatan berhasil disimpan.')}catch(e){toast(e.message,true)}finally{busy(false)}}
 
+function legacyExamNotesHtmlV750(notes){
+ const list=Array.isArray(notes)?notes:[];
+ if(!list.length)return'';
+ return `<div class="legacy-exam-notes-v750"><div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan sidang yang tersimpan.</div>${list.map((item,i)=>{const rawDate=String(item?.date||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>${esc(date)}</p>`:''}</div>${item?.status?`<span class="badge COMPLETED">${esc(item.status)}</span>`:''}</div><div class="subtlebox" style="white-space:pre-wrap">${esc(item?.note||'Sidang skripsi telah tercatat.')}</div></div>`}).join('')}</div>`;
+}
 function renderAcademicSchedule(b,eventType){
  if(['lecturer','admin'].includes(operationalUiRoleV720())&&b.menteeRoster)return renderMentee661(eventType,b);
  const isProposal=eventType==='PROPOSAL_SEMINAR',allRows=b.rows||[],studentOnly=S.boot.user.role_id==='student';S.cache.scheduleBundle=b;S.cache.scheduleType=eventType;S.cache.schedulePeriodV632=S.cache.schedulePeriodV632||{};
@@ -2264,7 +2274,8 @@ function renderAcademicSchedule(b,eventType){
  const reviewTable=reviewRows.length?table(reviewRows,[['event_date','Tanggal',scheduleDateLongV720],['student_name','Mahasiswa'],['reviewer_name','Dosen Penilai'],['review_note','Masukan dan Saran',(v)=>`<div class="review-note">${esc(v||'-')}</div>`],['decision','Keputusan',(v)=>esc(decisionLabel(v))],['score','Nilai',(v)=>esc(v||'-')],['reviewed_at','Waktu Review',dt],['student_feedback','Tanggapan Mahasiswa',(v)=>`<div class="review-feedback">${esc(v||'Belum ada tanggapan')}</div>`],['student_feedback_at','Waktu Tanggapan',dt]],reviewActions):'<div class="card empty">Belum ada saran masukan dosen untuk jadwal ini.</div>';
  const years=Array.from(new Set([...(options.academicYears||[]),...allRows.map(r=>r.academic_year)].filter(Boolean))),semesters=Array.from(new Set([...(options.semesters||[]).map(x=>String(x)==='Ganjil'?'Gasal':x),'Gasal','Genap'].filter(Boolean)));
  const periodFilter=studentOnly?'':`<div class="filterbar"><div class="field"><label>Cari Jadwal</label><input id="scheduleSearch" type="search" value="${attr(search)}" placeholder="Nama, NIM, judul, dosen, prodi, ruang..."></div><div class="field"><label>Tahun Akademik</label><select id="scheduleAcademicYear"><option value="">Semua Tahun Akademik</option>${years.map(x=>`<option value="${attr(x)}" ${String(x)===String(selectedYear)?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="scheduleSemester"><option value="">Semua Semester</option>${semesters.map(x=>`<option value="${attr(x)}" ${String(x)===String(selectedSemester)?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="filter-count">${rows.length} dari ${allRows.length} jadwal</div></div>`;
- const scheduleCards=scheduleCardsV642(rows,b,isProposal,downloadLabel,actions);
+ const legacyExamNotes=studentOnly&&!isProposal&&!allRows.length?(b.legacyExamNotes||[]):[];
+ const scheduleCards=legacyExamNotes.length?legacyExamNotesHtmlV750(legacyExamNotes):scheduleCardsV642(rows,b,isProposal,downloadLabel,actions);
  $('content').innerHTML=`<section class="section">${b.canManage?`<div class="sectionhead"><span></span><div class="toolbar"><button class="btn primary" data-action="schedule-add">+ Tambah Jadwal</button><button class="btn secondary" data-action="schedule-bulk" data-type="${attr(eventType)}">Bulk CSV</button></div></div>`:''}${periodFilter}${scheduleCards}</section>${isProposal?`<section class="section"><div class="sectionhead"><div><h3>Saran Masukan Dosen dan Tanggapan Mahasiswa</h3><p>Masukan dosen ditampilkan bersama tanggapan mahasiswa pada jadwal yang sama.</p></div></div>${reviewTable}</section>`:''}`;restoreDetailStatesV632($('content'));
 }
 function scoreLetterV639(value){if(value===null||value===undefined||String(value).trim()===''||String(value)==='-')return'-';const n=Number(value);if(!Number.isFinite(n))return'-';return n>=86?'A':n>=80?'A-':n>=75?'B+':n>=70?'B':n>=66?'B-':n>=61?'C+':n>=56?'C':n>=41?'D':'E'}
@@ -2822,6 +2833,7 @@ function updateProfileSignatureCacheV686(url){if(!url)return;const apply=profile
 function profileSignatureFieldV670(d){return `<div class="field span2"><label>Spesimen Tanda Tangan</label>${d.signature_url?`<img src="${attr(signatureViewUrlV686(d.signature_url))}" alt="Tanda tangan saat ini" style="display:block;max-width:280px;max-height:110px;margin:6px 0;object-fit:contain">`:''}<input id="pfSignatureFile" type="file" accept="image/*"><div class="hint">Pilih gambar, lalu tarik kotak crop pada area tanda tangan. Sistem otomatis membersihkan background menjadi putih dan menstandarkan hasil ke 600 × 200 px.</div><div id="pfSignatureCropShell" class="signature-crop-shell hidden"><canvas id="pfSignatureCrop" class="signature-crop-canvas" width="700" height="300"></canvas><div class="toolbar" style="margin-top:8px"><button type="button" class="btn secondary small" data-action="signature-crop-apply">Gunakan Area Crop</button></div></div><div id="pfSignaturePreview" class="signature-crop-preview"><span class="hint">Preview hasil tanda tangan 600 × 200 px</span></div><div style="margin:10px 0 6px">atau gambar langsung:</div><canvas id="pfSignaturePad" width="600" height="200" style="width:100%;max-width:600px;height:200px;border:1px solid #cfd9e2;background:#fff;touch-action:none"></canvas><button type="button" class="btn ghost small" data-action="signature-clear" style="margin-top:6px">Bersihkan Gambar</button></div>`}
 function renderProfile(p){
  S.cache.profileBundleV630=p||{};const u=p.user||S.boot.user||{},d=p.detail||{},role=u.role_id,editing=role!=='lecturer'||!!S.cache.profileEditV630;let extra='';
+ if(['lecturer','student'].includes(String(role||''))){$('content').innerHTML=`<div class="card"><div class="sectionhead"><div><h3>Profil Saya</h3><p>Untuk akun ${esc(ROLE[role]||role)}, pengaturan profil yang aktif hanya perubahan password.</p></div></div><div class="toolbar"><button class="btn primary" data-action="change-password">Ganti Password</button></div></div>`;return}
  if(role==='lecturer'&&!editing){const selected=profileSelectedNamesV630(p,d);$('content').innerHTML=`<div class="card"><div class="sectionhead"><div><h3>Profil Dosen</h3><p>Informasi profil dan kompetensi yang digunakan pada rekomendasi pembimbing.</p></div><button class="btn primary" data-action="profile-edit">Ubah</button></div><div class="detail-grid"><div class="detail-item"><small>Email</small><div>${esc(u.email||'-')}</div></div><div class="detail-item"><small>Role</small><div>${esc(ROLE[role]||role)}</div></div><div class="detail-item"><small>Nama</small><div>${esc(u.name||d.name||'-')}</div></div><div class="detail-item"><small>Username</small><div>${esc(u.username||'-')}</div></div><div class="detail-item"><small>Prodi</small><div>${esc(d.program_name||'-')}</div></div><div class="detail-item"><small>No. Telepon</small><div>${esc(d.phone_number||'-')}</div></div><div class="detail-item span2"><small>Mata Kuliah Spesialisasi</small><div class="matchchips">${selected.length?selected.map(x=>`<span class="chip">${esc(x)}</span>`).join(''):'-'}</div></div><div class="detail-item span2"><small>Ekspertise</small><div>${esc(d.expertise_manual||d.expertise||'-')}</div></div><div class="detail-item span2"><small>Spesimen Tanda Tangan</small><div>${d.signature_url?`<img src="${attr(signatureViewUrlV686(d.signature_url))}" alt="Spesimen tanda tangan" style="max-width:320px;max-height:130px;object-fit:contain">`:'Belum diunggah'}</div></div></div><div class="toolbar" style="margin-top:14px"><button class="btn ghost" data-action="change-password">Ganti Password</button></div></div>`;return}
  if(role==='student')extra=`<div class="field"><label>Program Studi</label><input id="pfProgram" value="${attr(d.program_name||'')}"></div><div class="field"><label>Kelas</label><input id="pfClass" value="${attr(d.class_name||'')}"></div><div class="field"><label>Gender / Sapaan</label><input id="pfGender" value="${attr(d.gender||'')}"></div><div class="field"><label>No. Telepon</label><input id="pfPhone" type="tel" inputmode="tel" value="${attr(normalizePhoneV711(d.phone_number||''))}"></div><div class="field span2"><label>Data Skripsi Disetujui</label><div class="subtlebox">Judul: ${esc(d.thesis_title||'-')}<br>Bidang: ${esc(d.thesis_field_name||d.thesis_field_id||'-')} · Mata Kuliah: ${esc(d.thesis_course_name||'-')}<br>Pembimbing: ${esc(d.supervisor_name||d.supervisor_id||'-')}</div></div>${profileSignatureFieldV670(d)}`;
  if(role==='lecturer')extra=`<div class="field"><label>Prodi</label><input id="pfProgram" value="${attr(d.program_name||'')}"></div><div class="field"><label>No. Telepon</label><input id="pfPhone" type="tel" inputmode="tel" value="${attr(normalizePhoneV711(d.phone_number||''))}"></div>${profileSpecializationFieldsV616(p,d)}<div class="field span2"><label>Ekspertise</label><textarea id="pfExpertise" style="min-height:130px" placeholder="Contoh: pembiayaan infrastruktur, KPBU, keuangan publik, data panel">${esc(d.expertise_manual||d.expertise||'')}</textarea></div>${profileSignatureFieldV670(d)}`;
