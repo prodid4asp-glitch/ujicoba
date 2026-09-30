@@ -747,7 +747,6 @@ window.PORTAL_CONFIG=Object.freeze({
     if(!key||key.indexOf('PASTE_')===0)throw new Error('SUPABASE_ANON_KEY belum diisi di index.html.');
     payload=Object.assign({},payload||{},{clientVersion:String(window.PORTAL_CONFIG.VERSION||'')});
     var baseTimeout=Number(timeout)||30000;
-    var readOnly=['page.load','admin.tab','auth.resume'].includes(String(payload.action||''));
     async function attempt(ms){
       var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},ms);
       try{
@@ -764,11 +763,9 @@ window.PORTAL_CONFIG=Object.freeze({
     }
     try{return await attempt(baseTimeout)}
     catch(err){
-      var transient=(err&&err.name==='AbortError')||(err instanceof TypeError&&/fetch/i.test(String(err.message||'')));
-      if(readOnly&&transient){
-        await new Promise(function(resolve){setTimeout(resolve,650)});
-        try{return await attempt(Math.max(22000,Math.min(40000,baseTimeout+10000)))}catch(err2){err=err2}
-      }
+      // Mode hemat: jangan mengulang page.load/admin.tab/auth.resume otomatis.
+      // Retry otomatis saat request pertama sebenarnya masih diproses dapat menggandakan
+      // query, egress, dan log ingestion. Pengguna tetap dapat menekan Muat Ulang.
       if(err&&err.name==='AbortError')throw new Error('Koneksi Supabase melewati batas waktu.');
       if(err instanceof TypeError&&/fetch/i.test(String(err.message||'')))throw new Error('Edge Function portal-api belum aktif atau koneksi ke Supabase sedang tidak stabil.');
       throw err;
@@ -1062,13 +1059,17 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20260929-2300';
+const INTERNAL_BUILD_V720='20260930-2345';
+const FREE_TIER_ECONOMY_V760=true;
+const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
+const ECONOMY_MAX_PAGE_CACHE_V760=3;
+const ECONOMY_MAX_ADMIN_TAB_CACHE_V760=2;
 const K={token:'portal_v60_token',refresh:'portal_v60_refresh',boot:'portal_v60_boot',page:'portal_v60_page',admin:'portal_v60_admin',collapsed:'portal_v60_collapsed',lastView:'portal_v60_last_view',expires:'portal_v60_expires'};
 const MEM={};
 // v4.7: jangan pernah memakai window.name. Pada iframe Apps Script/Google Sites,
 // window.name dapat dikelola host/sandbox dan berpotensi mengganggu lifecycle frame.
 function storeGet(k){try{const v=window.localStorage&&localStorage.getItem(k);if(v!==null)return v||''}catch(e){}try{const v=window.sessionStorage&&sessionStorage.getItem(k);if(v!==null)return v||''}catch(e){}return MEM[k]??''}
-function storeSet(k,v){v=String(v??'');let ok=false;try{if(window.localStorage){localStorage.setItem(k,v);ok=true}}catch(e){}try{if(window.sessionStorage){sessionStorage.setItem(k,v);ok=true}}catch(e){}MEM[k]=v;return ok}
+function storeSet(k,v){v=String(v??'');try{if(window.localStorage){localStorage.setItem(k,v);MEM[k]=v;return true}}catch(e){}try{if(window.sessionStorage){sessionStorage.setItem(k,v);MEM[k]=v;return true}}catch(e){}MEM[k]=v;return false}
 function storeRemove(k){try{window.localStorage&&localStorage.removeItem(k)}catch(e){}try{window.sessionStorage&&sessionStorage.removeItem(k)}catch(e){}delete MEM[k]}
 function jsonGet(k){try{return JSON.parse(storeGet(k)||'null')}catch(e){return null}}
 function sessionJsonGet(k){try{return JSON.parse((window.sessionStorage&&sessionStorage.getItem(k))||'null')}catch(e){return null}}
@@ -1090,11 +1091,11 @@ function durableWorkspaceV674(){
  // Data admin/monitor dapat berisi ribuan kartu. Jangan serialisasi seluruh workspace
  // ke IndexedDB pada setiap perubahan; itu membuat UI berat dan F5 lambat.
  if(['admin','operator','monitor'].includes(role))return {pages:S.workspace.pages?.dashboard?{dashboard:S.workspace.pages.dashboard}:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:S.workspace.syncedAt||0,pageSynced:S.workspace.pages?.dashboard?{dashboard:S.workspace.pageSynced?.dashboard||0}:{},adminSynced:0};
- const pages={};for(const key of ['dashboard',S.page])if(key&&S.workspace.pages?.[key])pages[key]=S.workspace.pages[key];
+ const pages={};if(S.page&&S.workspace.pages?.[S.page])pages[S.page]=S.workspace.pages[S.page];
  return {pages,shared:{},admin:null,adminTabs:{},errors:{},syncedAt:S.workspace.syncedAt||0,pageSynced:Object.fromEntries(Object.keys(pages).map(k=>[k,S.workspace.pageSynced?.[k]||0])),adminSynced:0};
 }
 function scheduleDurableSaveV61(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=setTimeout(()=>{if(!S.token)return;const role=S.boot?.user?.role_id||'',lastView=['admin','operator','monitor'].includes(role)?(S.lastView?{page:S.lastView.page,adminTab:S.lastView.adminTab,savedAt:S.lastView.savedAt}:null):S.lastView;durableWriteV61({buildId:INTERNAL_BUILD_V720,token:S.token,refreshToken:S.refreshToken,boot:S.boot,expiresAt:S.expiresAt,page:S.page,adminTab:S.adminTab,collapsed:S.collapsed,lastView,workspace:durableWorkspaceV674(),savedAt:Date.now()})},600)}
-async function restoreDurableSessionV61(){const rec=await durableReadV61();const applyBuildReset=()=>{if(!rec||rec.buildId===INTERNAL_BUILD_V720)return;const affected=new Set(['dashboard','proposal_seminar','thesis_exam','letters','internship']);if(rec.workspace?.pages)for(const k of affected)delete rec.workspace.pages[k];if(rec.workspace?.pageSynced)for(const k of affected)delete rec.workspace.pageSynced[k];if(rec.lastView&&affected.has(rec.lastView.page))rec.lastView=null;try{sessionStorage.removeItem(K.lastView)}catch(_){}};applyBuildReset();if(S.token&&S.boot?.user){if(!S.refreshToken&&rec?.refreshToken)S.refreshToken=String(rec.refreshToken);if(rec?.workspace)S.workspace=rec.workspace;if(!S.lastView&&rec?.lastView)S.lastView=rec.lastView;return true}if(!rec||!rec.token||!rec.boot?.user){if(rec)durableDeleteV61();return false}S.token=String(rec.token);S.refreshToken=String(rec.refreshToken||'');S.boot=rec.boot;S.expiresAt=Number(rec.expiresAt);S.page=rec.page||'dashboard';S.adminTab=rec.adminTab||'config';S.collapsed=!!rec.collapsed;S.lastView=rec.lastView||null;if(rec.workspace)S.workspace=rec.workspace;return true}
+async function restoreDurableSessionV61(){const rec=await durableReadV61();const applyBuildReset=()=>{if(!rec||rec.buildId===INTERNAL_BUILD_V720)return;rec.workspace={pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0};rec.lastView=null;try{sessionStorage.removeItem(K.lastView)}catch(_){}};applyBuildReset();if(S.token&&S.boot?.user){if(!S.refreshToken&&rec?.refreshToken)S.refreshToken=String(rec.refreshToken);if(rec?.workspace)S.workspace=rec.workspace;if(!S.lastView&&rec?.lastView)S.lastView=rec.lastView;return true}if(!rec||!rec.token||!rec.boot?.user){if(rec)durableDeleteV61();return false}S.token=String(rec.token);S.refreshToken=String(rec.refreshToken||'');S.boot=rec.boot;S.expiresAt=Number(rec.expiresAt);S.page=rec.page||'dashboard';S.adminTab=rec.adminTab||'config';S.collapsed=!!rec.collapsed;S.lastView=rec.lastView||null;if(rec.workspace)S.workspace=rec.workspace;return true}
 function save(){storeSet(K.token,S.token||'');storeSet(K.refresh,S.refreshToken||'');storeSet(K.boot,JSON.stringify(S.boot||null));storeSet(K.page,S.page||'dashboard');storeSet(K.admin,S.adminTab||'config');storeSet(K.collapsed,S.collapsed?'1':'0');storeSet(K.expires,S.expiresAt||'');scheduleDurableSaveV61()}
 function clearSession(){clearTimeout(scheduleDurableSaveV61._t);scheduleDurableSaveV61._t=0;S.token='';S.refreshToken='';S.boot=null;S.expiresAt=0;S.forcePasswordChange=false;S.cache={};S.workspace={pages:{},shared:{},admin:null,adminTabs:{},errors:{},syncedAt:0,pageSynced:{},adminSynced:0};S.lastView=null;Object.values(K).forEach(storeRemove);try{sessionStorage.clear()}catch(e){}try{localStorage.removeItem('sb-'+String(window.PORTAL_CONFIG?.SUPABASE_URL||'').split('//')[1]?.split('.')[0]+'-auth-token')}catch(e){}durableDeleteV61()}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
@@ -1142,10 +1143,9 @@ function sessionExpired(){clearSession();showLogin('Sesi login berakhir. Silakan
 function showLogin(msg,type='error'){clearSession();$('app').classList.add('hidden');$('loginPage').classList.remove('hidden');finishStartupV62();if(msg)notice(msg,type)}
 function hydrateBundleV52(page,bundle){return bundle?Object.assign({},bundle):null}
 function rememberViewV52(page,payload){
-  const role=S.boot?.user?.role_id||'';
-  // Untuk admin/monitor simpan posisi halaman saja. Payload besar tetap ada di memori,
-  // tetapi tidak diserialisasi berulang ke sessionStorage.
-  S.lastView=['admin','operator','monitor'].includes(role)?{page:page,adminTab:S.adminTab,payload:null,savedAt:Date.now()}:{page:page,adminTab:S.adminTab,payload:payload,savedAt:Date.now()};
+  // Cache payload has a single source of truth in S.workspace. lastView stores only
+  // navigation state, avoiding a second serialized copy in sessionStorage/IndexedDB.
+  S.lastView={page:page,adminTab:S.adminTab,payload:null,savedAt:Date.now()};
   sessionJsonSet(K.lastView,S.lastView);
   scheduleDurableSaveV61();
 }
@@ -1153,11 +1153,10 @@ function renderRememberedViewV52(){
   const v=S.lastView;if(!v||v.page!==S.page)return false;
   try{
     if(S.page==='admin'){
-      renderAdminShell();
-      if(v.adminTab===S.adminTab&&v.payload){S.adminData=v.payload.data;S.adminRefs=v.payload.refs||{};renderAdminTab(S.adminTab,S.adminData);return true;}
-      return false;
+      const cached=S.workspace.adminTabs?.[S.adminTab];if(!cached)return false;
+      renderAdminShell();S.adminData=cached.data;S.adminRefs=cached.refs||{};renderAdminTab(S.adminTab,S.adminData);return true;
     }
-    if(v.payload){renderPage(S.page,v.payload);return true;}
+    const cached=S.workspace.pages?.[S.page];if(cached){renderPage(S.page,cached);return true;}
   }catch(e){console.warn('Cached view ignored',e)}
   return false;
 }
@@ -1172,7 +1171,20 @@ function invalidateClientCacheV52(){
   scheduleDurableSaveV61();
 }
 function navPageIdsV52(){return (S.boot?.nav||[]).map(x=>x.id).filter(x=>x&&x!=='reviews'&&x!=='assessment')}
-function pageIsFreshV52(page,maxAge=45000){const t=S.workspace.pageSynced?.[page]||0;return !!S.workspace.pages?.[page]&&Date.now()-t<maxAge}
+function pageIsFreshV52(page,maxAge=(FREE_TIER_ECONOMY_V760?ECONOMY_PAGE_FRESH_MS_V760:45000)){const t=S.workspace.pageSynced?.[page]||0;return !!S.workspace.pages?.[page]&&Date.now()-t<maxAge}
+function trimWorkspaceCacheV760(){
+ if(!FREE_TIER_ECONOMY_V760)return;
+ const pages=S.workspace.pages||{},synced=S.workspace.pageSynced||{},pageKeys=Object.keys(pages);
+ if(pageKeys.length>ECONOMY_MAX_PAGE_CACHE_V760){
+   const keep=new Set([S.page,...pageKeys.sort((a,b)=>(synced[b]||0)-(synced[a]||0)).slice(0,ECONOMY_MAX_PAGE_CACHE_V760)]);
+   for(const key of pageKeys)if(!keep.has(key)){delete pages[key];delete synced[key]}
+ }
+ const tabs=S.workspace.adminTabs||{},tabKeys=Object.keys(tabs);
+ if(tabKeys.length>ECONOMY_MAX_ADMIN_TAB_CACHE_V760){
+   const keep=new Set([S.adminTab,...tabKeys.sort((a,b)=>(tabs[b]?.syncedAt||0)-(tabs[a]?.syncedAt||0)).slice(0,ECONOMY_MAX_ADMIN_TAB_CACHE_V760)]);
+   for(const key of tabKeys)if(!keep.has(key))delete tabs[key];
+ }
+}
 function sleepV52(ms){return new Promise(r=>setTimeout(r,ms))}
 async function fetchPageV52(page,fresh=false){
   S.fetchingPages=S.fetchingPages||{};
@@ -1184,7 +1196,7 @@ async function fetchPageV52(page,fresh=false){
     if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');
     if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(errorTextV635(r?.message,'Data halaman gagal dimuat.'))}
     S.workspace.pages=S.workspace.pages||{};S.workspace.pageSynced=S.workspace.pageSynced||{};
-    S.workspace.pages[page]=r.bundle||{};S.workspace.pageSynced[page]=Date.now();
+    S.workspace.pages[page]=r.bundle||{};S.workspace.pageSynced[page]=Date.now();trimWorkspaceCacheV760();
     scheduleDurableSaveV61();
     return r.bundle||{};
   })();
@@ -1328,9 +1340,9 @@ function forceLoginVisible(message){try{busy(false);$('app')?.classList.add('hid
 async function safeStartV52(){try{await restoreDurableSessionV61();await resume();}catch(e){console.error('Portal startup failed',e);if(!S.token){clearSession();forceLoginVisible('Portal dipulihkan ke halaman login karena terjadi kesalahan saat memuat sesi. Silakan login kembali.')}else finishStartupV62();}}
 function confirmLogoutV640(){openModal('Konfirmasi Keluar','Apakah Anda yakin ingin keluar dari portal?','<div class="alert">Sesi login Anda akan diakhiri.</div>',`<span></span><div class="actions"><button class="btn ghost" data-action="close-modal">Tidak</button><button class="btn danger" data-action="logout-confirm">Ya, Keluar</button></div>`);document.querySelector('#modalBack .modal')?.classList.add('compact-modal')}
 async function logout(){closeModal(true);const t=S.token;S.prefetchGeneration=(S.prefetchGeneration||0)+1;stopDocumentsRealtimeV620();stopSupervisorRealtimeV621();stopInternshipRealtimeV622();try{if(t)await rpc({action:'auth.logout',token:t},8000)}catch(e){}clearSession();await durableDeleteV61();try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}showLogin('Anda telah keluar. Silakan login kembali.','success')}
-async function refreshPageV52(page,showError=true){
+async function refreshPageV52(page,showError=true,fresh=true){
   try{
-    const bundle=await fetchPageV52(page,true);
+    const bundle=await fetchPageV52(page,!!fresh);
     // Jangan render ulang halaman ketika pengguna sedang mengisi form.
     // Respons terbaru tetap masuk workspace dan diterapkan setelah form ditutup/disimpan.
     if(S.page===page&&!pageComposerOpenV64(page)){const b=hydrateBundleV52(page,bundle);renderPage(page,b);rememberViewV52(page,b);}
@@ -1361,9 +1373,10 @@ async function loadPage(page,force=false){
   }
   if(cached){renderPage(page,cached);rememberViewV52(page,cached);}
   if(!cached)$('content').innerHTML=`<div class="card"><h3>Memuat ${esc(LABEL[page]||page)}…</h3><p class="hint">Mengambil data halaman ini.</p></div>`;
-  const freshness=S.boot?.user?.role_id==='student'?60000:(S.boot?.user?.role_id==='lecturer'&&page==='dashboard'?60000:180000);
-  if(cached&&!force&&!pageIsFreshV52(page,freshness)){refreshPageV52(page,false).catch(()=>{});}
-  else if(force||!cached){try{await refreshPageV52(page,!cached)}catch(e){if(!cached)$('content').innerHTML=`<div class="card"><div class="alert">${esc(errorTextV635(e,'Data halaman gagal dimuat.'))}</div><button class="btn primary" data-action="refresh" style="margin-top:12px">Coba lagi</button></div>`;}}
+  const freshness=FREE_TIER_ECONOMY_V760?ECONOMY_PAGE_FRESH_MS_V760:(S.boot?.user?.role_id==='student'?60000:(S.boot?.user?.role_id==='lecturer'&&page==='dashboard'?60000:180000));
+  if(cached&&!force&&!pageIsFreshV52(page,freshness)){refreshPageV52(page,false,false).catch(()=>{});}
+  else if(force){try{await refreshPageV52(page,!cached,true)}catch(e){if(!cached)$('content').innerHTML=`<div class="card"><div class="alert">${esc(errorTextV635(e,'Data halaman gagal dimuat.'))}</div><button class="btn primary" data-action="refresh" style="margin-top:12px">Coba lagi</button></div>`;}}
+  else if(!cached){try{await refreshPageV52(page,true,false)}catch(e){$('content').innerHTML=`<div class="card"><div class="alert">${esc(errorTextV635(e,'Data halaman gagal dimuat.'))}</div><button class="btn primary" data-action="refresh" style="margin-top:12px">Coba lagi</button></div>`;}}
   schedulePrefetchV52();
 }
 window.__portalLoadPageV52=loadPage;
@@ -1704,7 +1717,7 @@ function applyInternshipBundleV622(bundle,revision){
 function setInternshipLiveStatusV622(message,state=''){const el=$('internshipLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'')}
 function internshipRealtimeBusyV622(){return pageComposerOpenV64('internship')||$('modalBack')?.classList?.contains('show')||$('loader')?.classList?.contains('show')}
 function stopInternshipRealtimeV622(){clearTimeout(startInternshipRealtimeV622._timer);startInternshipRealtimeV622._timer=0}
-function startInternshipRealtimeV622(delay=INTERNSHIP_REALTIME_INTERVAL_V622){stopInternshipRealtimeV622();if(!S.token||S.page!=='internship')return;setInternshipLiveStatusV622(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
+function startInternshipRealtimeV622(delay=INTERNSHIP_REALTIME_INTERVAL_V622){stopInternshipRealtimeV622();if(!S.token||S.page!=='internship')return;if(FREE_TIER_ECONOMY_V760){setInternshipLiveStatusV622('Mode hemat data · gunakan Muat Ulang bila perlu');return}setInternshipLiveStatusV622(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollInternshipRealtimeV622(){
  startInternshipRealtimeV622._timer=0;if(!S.token||S.page!=='internship')return;
  if(document.hidden||internshipRealtimeBusyV622()||pollInternshipRealtimeV622._busy){startInternshipRealtimeV622();return}
@@ -2000,7 +2013,7 @@ function setSupervisorLiveStatusV621(message,state=''){
  const el=$('supervisorLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'');
 }
 function stopSupervisorRealtimeV621(){clearTimeout(startSupervisorRealtimeV621._timer);startSupervisorRealtimeV621._timer=0}
-function startSupervisorRealtimeV621(delay=SUPERVISOR_REALTIME_INTERVAL_V621){stopSupervisorRealtimeV621();if(!S.token||S.page!=='supervisor')return;setSupervisorLiveStatusV621(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
+function startSupervisorRealtimeV621(delay=SUPERVISOR_REALTIME_INTERVAL_V621){stopSupervisorRealtimeV621();if(!S.token||S.page!=='supervisor')return;if(FREE_TIER_ECONOMY_V760){setSupervisorLiveStatusV621('Mode hemat data · gunakan Muat Ulang bila perlu');return}setSupervisorLiveStatusV621(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollSupervisorRealtimeV621(){
  startSupervisorRealtimeV621._timer=0;
  if(!S.token||S.page!=='supervisor'||!['student','lecturer','admin','operator','monitor'].includes(S.boot?.user?.role_id))return;
@@ -2227,7 +2240,7 @@ function setDocumentLiveStatusV620(message,state=''){
  const el=$('documentLiveStatus');if(!el)return;el.textContent=message;el.className='live-sync'+(state?' '+state:'');
 }
 function stopDocumentsRealtimeV620(){clearTimeout(startDocumentsRealtimeV620._timer);startDocumentsRealtimeV620._timer=0}
-function startDocumentsRealtimeV620(delay=DOCUMENT_REALTIME_INTERVAL_V620){stopDocumentsRealtimeV620();if(!S.token||S.page!=='documents')return;setDocumentLiveStatusV620(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
+function startDocumentsRealtimeV620(delay=DOCUMENT_REALTIME_INTERVAL_V620){stopDocumentsRealtimeV620();if(!S.token||S.page!=='documents')return;if(FREE_TIER_ECONOMY_V760){setDocumentLiveStatusV620('Mode hemat data · gunakan Muat Ulang bila perlu');return}setDocumentLiveStatusV620(S.boot?.user?.role_id==='student'?'Diperbarui saat menu dibuka':'Sinkron saat ada perubahan');ensureSupabaseRealtimeV630();}
 async function pollDocumentsRealtimeV620(){
  startDocumentsRealtimeV620._timer=0;
  if(!S.token||S.page!=='documents')return;
@@ -2258,7 +2271,7 @@ function legacyExamNotesHtmlV750(notes,hasSchedule=false){
  const list=Array.isArray(notes)?notes.filter(Boolean):[];if(!list.length)return'';
  const intro=hasSchedule
   ?'<div class="notice show"><b>Catatan Sidang Skripsi</b><br>Data berikut berasal dari tabel portal_catatansidang dan ditampilkan sebagai informasi tambahan.</div>'
-  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br> Berikut catatan penguji saat sidang.</div>';
+  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan sidang dari tabel portal_catatansidang.</div>';
  const field=(label,value)=>`<div class="detail-item span2"><small>${esc(label)}</small><div style="white-space:pre-wrap">${esc(String(value||'-'))}</div></div>`;
  return `<div class="legacy-exam-notes-v750">${intro}${list.map((item,i)=>{const rawDate=String(item?.date_exam||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>Tanggal Sidang: ${esc(date)}</p>`:''}</div>${item?.conclusion?`<span class="badge COMPLETED">${esc(item.conclusion)}</span>`:''}</div><div class="detail-grid">${field('Catatan Ketua Penguji',item?.chair)}${field('Catatan Penguji 1',item?.examiner_1)}${field('Catatan Penguji 2',item?.examiner_2)}${field('Kesimpulan Tim Penguji',item?.conclusion)}${field('Tanggal Sidang',date||rawDate||'-')}</div></div>`}).join('')}</div>`;
 }
@@ -2865,7 +2878,7 @@ async function loadAdminTab(tab,force=false){
 async function fetchAdminTabV52(tab,fresh=false){
  S.fetchingAdmin=S.fetchingAdmin||{};if(S.fetchingAdmin[tab])return S.fetchingAdmin[tab];
  const tokenAtStart=S.token,userAtStart=S.boot?.user?.email||'';
- S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},28000);if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;scheduleDurableSaveV61();return item})();
+ S.fetchingAdmin[tab]=(async()=>{const r=await rpc({action:'admin.tab',tab,token:tokenAtStart,fresh:!!fresh},28000);if(userAtStart!==(S.boot?.user?.email||''))throw new Error('Sesi berubah.');if(!r?.ok){if(r?.code==='SESSION_EXPIRED')return sessionExpired();throw new Error(r?.message||'Data admin gagal dimuat.')}S.workspace.adminTabs=S.workspace.adminTabs||{};const item={data:r.data,refs:r.refs||{},syncedAt:Date.now()};S.workspace.adminTabs[tab]=item;S.workspace.admin={tab:tab,data:r.data,refs:r.refs||{}};S.workspace.adminSynced=item.syncedAt;trimWorkspaceCacheV760();scheduleDurableSaveV61();return item})();
  try{return await S.fetchingAdmin[tab]}finally{delete S.fetchingAdmin[tab]}
 };
 
@@ -3047,6 +3060,7 @@ document.addEventListener('toggle',e=>{if(e.target?.matches?.('details'))remembe
 document.addEventListener('change',e=>{if(e.target?.matches?.('details'))rememberDetailStateV632(e.target);if(['scheduleAcademicYear','scheduleSemester'].includes(e.target?.id))return applySchedulePeriodV632();if(['dStudent','dHasRevision','dType'].includes(e.target?.id))syncDocumentThesisInfoV635();if(e.target&&e.target.id==='svField')syncSupervisorCourse();if(['recMatch'].includes(e.target?.id))applySupervisorRecommendationFiltersV617();if(['smStatus','smProgram'].includes(e.target?.id))applySupervisorApplicationFiltersV617();if(['laProgram','laStatus'].includes(e.target?.id))applyLecturerAvailabilityFiltersV630();if(['adminUserRole','adminUserActive'].includes(e.target?.id))applyAdminUserFiltersV617();if(e.target&&['scStudent','scStudentSearch'].includes(e.target.id))scheduleStudentSync();if(e.target&&['scReviewer1Search','scReviewer2Search'].includes(e.target.id))scheduleLecturerSearchSyncV735(e.target.id.replace('Search',''));if(e.target&&e.target.id==='lType')updateLetterTemplatePreview();if(e.target&&e.target.id==='imKind')internshipSyncKind();if(e.target?.matches?.('[data-intern-e1]'))internshipApplyUnitFilters();if(e.target?.matches?.('[data-profile-specialization]'))profileSpecializationCountV616();if(e.target&&e.target.id==='imPic'){const s=internshipStudents().find(x=>String(x.student_id)===String(e.target.value));if(s){if($('imPicEmail')&&!val('imPicEmail'))$('imPicEmail').value=s.email||'';if($('imPicProgram')&&!val('imPicProgram'))$('imPicProgram').value=s.program_name||''}}});
 document.addEventListener('input',e=>{if(e.target?.id==='recSearch')applySupervisorRecommendationFiltersV617();if(e.target?.id==='smSearch')applySupervisorApplicationFiltersV617();if(e.target?.id==='laSearch')applyLecturerAvailabilityFiltersV630();if(e.target?.id==='adminUserSearch')applyAdminUserFiltersV617();if(e.target?.id==='pfSpecializationSearch')profileSpecializationSearchV630();if(e.target?.id==='scheduleSearch')applyScheduleSearchV639(e.target);if(e.target?.id==='scStudentSearch')scheduleStudentSearchSyncV665();if(['scReviewer1Search','scReviewer2Search'].includes(e.target?.id))scheduleLecturerSearchSyncV735(e.target.id.replace('Search',''))});
 document.addEventListener('visibilitychange',()=>{
+ if(FREE_TIER_ECONOMY_V760)return;
  if(document.hidden||!S.token||!S.boot)return;
  const delay=8000+Math.floor(Math.random()*12000);
  if(S.page==='documents')startDocumentsRealtimeV620(delay);
@@ -3064,6 +3078,7 @@ function loadSupabaseRealtimeLibraryV674(){
 }
 window.addEventListener('portal:session',ev=>{const r=ev?.detail||{};if(r.token)S.token=String(r.token);if(r.refreshToken)S.refreshToken=String(r.refreshToken);if(r.sessionExpiresAt)S.expiresAt=Number(r.sessionExpiresAt);if(r.boot?.user)S.boot=r.boot;save();if(supabaseRealtimeClientV630&&r.token)supabaseRealtimeClientV630.realtime.setAuth(String(r.token));});
 async function ensureSupabaseRealtimeV630(){
+ if(FREE_TIER_ECONOMY_V760)return;
  // v6.74.0: 1000+ mahasiswa tidak membuka WebSocket realtime masing-masing.
  // Library supabase-js juga diload lazy hanya untuk admin/dosen/monitor.
  const role=S.boot?.user?.role_id||'';if(role==='student'||isAdminLikeV720(role))return;
@@ -3073,7 +3088,7 @@ async function ensureSupabaseRealtimeV630(){
  supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
  supabaseRealtimeClientV630.realtime.setAuth(S.token);
  const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
- const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academic_schedules','portal_academicschedules','portal_catatansidang','portal_thesis_exam_scores','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
+ const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academicschedules','portal_catatansidang','portal_deskreview','portal_thesis_exam_scores','portal_research_letters','portal_internship_applications','portal_student_periods','portal_config','portal_records'];
  for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
  supabaseRealtimeChannelV630=ch.subscribe();
 }
@@ -3083,7 +3098,7 @@ function scheduleSupabaseRefreshV632(payload){
   (['portal_supervisor_requests','portal_theses','portal_student_periods'].includes(table)&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_guidance'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
-  (['portal_academic_schedules','portal_academicschedules'].includes(table)&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
+  (table==='portal_academicschedules'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (['portal_catatansidang','portal_thesis_exam_scores'].includes(table)&&page==='thesis_exam')||
   (table==='portal_research_letters'&&['dashboard','letters'].includes(page))||
   (table==='portal_internship_applications'&&['dashboard','internship'].includes(page))||
@@ -3092,9 +3107,11 @@ function scheduleSupabaseRefreshV632(payload){
  if(!relevant||pageComposerOpenV64(page))return;
  clearTimeout(supabaseRealtimeTimerV630);supabaseRealtimeTimerV630=setTimeout(()=>refreshCurrentV52().catch(e=>console.warn('Realtime refresh dilewati:',e?.message||e)),2800);
 }
-ensureSupabaseRealtimeV630();setInterval(ensureSupabaseRealtimeV630,60000);
-// Fallback pembaruan jadwal setiap 2 menit bila Realtime belum diaktifkan di Supabase.
-setInterval(()=>{if(!document.hidden&&S.token&&S.page==='dashboard'&&S.boot?.user?.role_id==='lecturer'&&!S.fetchingPages?.dashboard&& !pageIsFreshV52('dashboard',90000))refreshPageV52('dashboard',false).catch(()=>{});},120000);
+if(!FREE_TIER_ECONOMY_V760){
+ ensureSupabaseRealtimeV630();setInterval(ensureSupabaseRealtimeV630,60000);
+ // Fallback pembaruan jadwal setiap 2 menit bila Realtime belum diaktifkan di Supabase.
+ setInterval(()=>{if(!document.hidden&&S.token&&S.page==='dashboard'&&S.boot?.user?.role_id==='lecturer'&&!S.fetchingPages?.dashboard&&!pageIsFreshV52('dashboard',90000))refreshPageV52('dashboard',false).catch(()=>{});},120000);
+}
 window.addEventListener('portal:csv',()=>{if(S.token&&S.page==='dashboard'&&S.workspace.pages?.dashboard?.dashboard)renderDashboard(S.workspace.pages.dashboard.dashboard)});
 window.addEventListener('error',e=>{console.error(e.error||e.message);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Terjadi kesalahan tampilan. Portal dikembalikan ke halaman login.');else toast('Terjadi kesalahan tampilan: '+(e.message||'unknown'),true)}catch(_){}});
 window.addEventListener('unhandledrejection',e=>{console.error(e.reason);try{if($('loginPage')?.classList.contains('hidden')&&$('app')?.classList.contains('hidden'))forceLoginVisible('Koneksi portal gagal dipulihkan. Silakan login kembali.')}catch(_){}});
