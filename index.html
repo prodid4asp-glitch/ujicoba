@@ -830,7 +830,7 @@ window.PORTAL_CONFIG=Object.freeze({
       <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.0</div>
     </div>
   </div>
-  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2>Skripsi yang baik adalah skripsi yang selesai.</h2></div></div>
+  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2><i></i>Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu</i>♥️</h2></div></div>
 </section>
 
 <!-- v4.7: LOGIN BOOTSTRAP MANDIRI.
@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261005-2020';
+const INTERNAL_BUILD_V720='20261005-2040';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1991,8 +1991,9 @@ function renderSupervisor(b){
  b=b||{};const role=operationalUiRoleV720(),req=(b.requests||[]).slice().sort((a,z)=>String(a.submitted_at||'9999-12-31').localeCompare(String(z.submitted_at||'9999-12-31'))).map((r,i)=>Object.assign({queue_no:i+1},r)),ref=b.reference||{};b.requests=req;S.cache.supervisor=b;if(b.supervisor_revision)S.cache.supervisorRevisionV621=String(b.supervisor_revision);let h='';
  if(role==='student'){
    const fields=ref.fields||[],courses=ref.courses||[],win=S.boot.selectionWindow||{},state=b.studentState||{};
-   if(state.has_active_thesis){
-     h+='';
+   if(state.supervisor_ready||state.has_active_thesis||state.has_accepted_request){
+     const source=state.has_active_thesis?'Dosen pembimbing sudah ditetapkan':'Pengajuan dosen pembimbing sudah diterima';
+     h+=`<div class="card"><div class="alert success"><b>${esc(source)}.</b><br>Pengajuan pembimbing baru dinonaktifkan. Anda sudah dapat melanjutkan Bimbingan, Dokumen, Seminar Proposal, Ujian Skripsi, dan Surat Riset melalui submenu Skripsi.</div></div>`;
    }else if(state.has_pending_request){
      h+=`<div class="card"><div class="alert">Pengajuan pembimbing Anda sedang menunggu keputusan dosen. Selama masih berstatus <b>Menunggu</b>, form pengajuan baru disembunyikan.</div></div>`;
    }else{
@@ -2004,7 +2005,7 @@ function renderSupervisor(b){
    h+=supervisorLecturerMonitoringSectionV681(monitoring);
    h+=supervisorApplicationMonitoringSectionV617(b.supervisorApplicationMonitoring||{});
  }
- if(['admin','operator','student'].includes(role))h+=lecturerAvailabilitySectionV630(b.lecturerAvailability||{});
+ if(['admin','operator'].includes(role)||(role==='student'&&!b.studentState?.supervisor_ready))h+=lecturerAvailabilitySectionV630(b.lecturerAvailability||{});
  if(isAdminLikeV720(role)){const ov=b.overview||{},students=ov.students||[],lecturers=ov.lecturers||[];h+=`<div class="card"><h3>Penetapan pembimbing oleh prodi</h3><div class="formgrid"><div class="field"><label>Mahasiswa</label><select id="assignStudent"><option value="">Pilih</option>${students.map(x=>`<option value="${attr(x.student_id)}">${esc(x.name)} · ${esc(x.student_id)}</option>`).join('')}</select></div><div class="field"><label>Dosen</label><select id="assignLecturer"><option value="">Pilih</option>${lecturers.map(x=>`<option value="${attr(x.lecturer_id)}">${esc(x.name)} · sisa ${esc(x.remaining_quota??'')}</option>`).join('')}</select></div><div class="field span2"><label>Catatan</label><textarea id="assignNote"></textarea></div></div><button class="btn primary" data-action="direct-assign">Tetapkan</button></div>`}
  if(role==='lecturer'){
    const q=b.lecturerSummary||{};
@@ -2067,6 +2068,7 @@ async function pollSupervisorRealtimeV621(){
 
 function syncSupervisorCourse(){const f=$('svField'),c=$('svCourse');if(!f||!c)return;const opt=f.options[f.selectedIndex];const ids=String(opt?.dataset?.courses||'').split(',').map(x=>x.trim()).filter(Boolean);Array.from(c.options).forEach(o=>{o.disabled=ids.length>0&&!!o.value&&!ids.includes(String(o.value))});if(ids.length===1)c.value=ids[0];else if(!ids.includes(String(c.value)))c.value='';}
 async function findSupervisors(){
+ if(S.cache.supervisor?.studentState?.supervisor_ready)return toast('Dosen pembimbing sudah ditetapkan atau pengajuan sudah Diterima. Pengajuan pembimbing baru tidak dapat digunakan lagi.',true);
  const payload={field_id:val('svField'),course_id:val('svCourse'),title:val('svTitle'),abstract:val('svAbstract')};
  if(!payload.field_id||!payload.course_id||!payload.title||!payload.abstract)return toast('Bidang, mata kuliah, rencana judul, dan abstrak wajib diisi.',true);busy(true);
  try{const rows=await api('recommendSupervisors',payload);$('recommend').innerHTML=(rows||[]).length?supervisorRecommendationPanelV617(rows):'<div class="empty">Belum ada dosen yang masih memiliki sisa kuota.</div>';if(window.__bindPortalDomV52)window.__bindPortalDomV52($('recommend'))}catch(e){toast(e.message,true)}finally{busy(false)}
@@ -2083,6 +2085,7 @@ function applySupervisorMutationV622(result){
  if(S.page==='supervisor'){renderSupervisor(next);rememberViewV52('supervisor',next)}
 }
 function submitSupervisor(id){
+ if(S.cache.supervisor?.studentState?.supervisor_ready)return toast('Dosen pembimbing sudah ditetapkan atau pengajuan sudah Diterima. Pengajuan pembimbing baru tidak dapat digunakan lagi.',true);
  const payload={lecturer_id:String(id||'').trim(),field_id:val('svField'),course_id:val('svCourse'),title:val('svTitle'),abstract:val('svAbstract')};
  if(!payload.lecturer_id||!payload.field_id||!payload.course_id||!payload.title||!payload.abstract)return toast('Bidang, mata kuliah, rencana judul, abstrak, dan dosen wajib dipilih.',true);
  const lecturer=(S.cache.supervisorRecommendations||[]).find(r=>String(r.lecturer_id)===payload.lecturer_id);
@@ -3212,7 +3215,7 @@ async function ensureSupabaseRealtimeV630(){
  supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
  supabaseRealtimeClientV630.realtime.setAuth(S.token);
  const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
- const tables=['portal_supervisorrequests','portal_theses','portal_guidance','portal_documents','portal_academicschedules','portal_catatansidang','portal_deskreview','portal_thesis_exam_scores','portal_research_letters','portal_internshipapplications','portal_student_periods','portal_config','portal_records'];
+ const tables=['portal_supervisorrequests','portal_theses','portal_guidance','portal_documents','portal_academicschedules','portal_catatansidang','portal_deskreview','portal_thesis_exam_scores','portal_researchletters','portal_internshipapplications','portal_student_periods','portal_config','portal_records'];
  for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
  supabaseRealtimeChannelV630=ch.subscribe();
 }
@@ -3224,7 +3227,7 @@ function scheduleSupabaseRefreshV632(payload){
   (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
   (table==='portal_academicschedules'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (['portal_catatansidang','portal_thesis_exam_scores'].includes(table)&&page==='thesis_exam')||
-  (table==='portal_research_letters'&&['dashboard','letters'].includes(page))||
+  (table==='portal_researchletters'&&['dashboard','letters'].includes(page))||
   (table==='portal_internshipapplications'&&['dashboard','internship'].includes(page))||
   (table==='portal_config'&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam','admin'].includes(page))||
   (table==='portal_records'&&['profile','internship','proposal_seminar','thesis_exam'].includes(page));
