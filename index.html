@@ -872,7 +872,8 @@ window.PORTAL_CONFIG=Object.freeze({
       var nav=document.getElementById('nav');
       function setText(id,text){var el=document.getElementById(id);if(el)el.textContent=text||'';}
       var expiresAt=Number(result&&result.sessionExpiresAt)||Date.now()+24*60*60*1000;
-      var restrictedExamRole=['lecturer','student'].indexOf(String(user.role_id||''))>=0;
+      var fullStudentMenu=String(user.role_id||'')==='student'&&boot.studentFullMenu===true;
+      var restrictedExamRole=String(user.role_id||'')==='lecturer'||(String(user.role_id||'')==='student'&&!fullStudentMenu);
       var landingPage=restrictedExamRole?'thesis_exam':'dashboard';
       try{localStorage.setItem('portal_v60_token',String(result.token||''));localStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));localStorage.setItem('portal_v60_boot',JSON.stringify(boot));localStorage.setItem('portal_v60_page',landingPage);localStorage.setItem('portal_v60_expires',String(expiresAt));}catch(_){
         try{sessionStorage.setItem('portal_v60_token',String(result.token||''));sessionStorage.setItem('portal_v60_refresh',String(result.refreshToken||''));sessionStorage.setItem('portal_v60_boot',JSON.stringify(boot));sessionStorage.setItem('portal_v60_page',landingPage);sessionStorage.setItem('portal_v60_expires',String(expiresAt));}catch(__){}
@@ -1059,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261005-1845';
+const INTERNAL_BUILD_V720='20261005-1905';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1250,7 +1251,8 @@ if(window.__pendingPortalLoginV52){
   const pending=window.__pendingPortalLoginV52;
   setTimeout(()=>window.__portalAcceptLoginV52(pending),0);
 }
-function restrictedExamRoleV750(role=S.boot?.user?.role_id||''){return ['lecturer','student'].includes(String(role||''))}
+function fullStudentMenuV800(){return String(S.boot?.user?.role_id||'')==='student'&&S.boot?.studentFullMenu===true}
+function restrictedExamRoleV750(role=S.boot?.user?.role_id||''){const r=String(role||'');return r==='lecturer'||(r==='student'&&!fullStudentMenuV800())}
 function landingPageV750(role=S.boot?.user?.role_id||''){return restrictedExamRoleV750(role)?'thesis_exam':'dashboard'}
 function isPageAllowed(p){const role=String(S.boot?.user?.role_id||'');if(restrictedExamRoleV750(role))return p==='thesis_exam'||p==='profile';if(role==='operator'&&p==='admin')return false;return p==='dashboard'||(!['reviews','assessment'].includes(String(p))&&!!S.boot?.nav?.some(x=>x.id===p))}
 const NAV_THESIS_IDS_V726=['supervisor','guidance','documents','proposal_seminar','thesis_exam','letters'];
