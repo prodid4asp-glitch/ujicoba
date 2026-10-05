@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261005-1905';
+const INTERNAL_BUILD_V720='20261005-2020';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -3212,14 +3212,14 @@ async function ensureSupabaseRealtimeV630(){
  supabaseRealtimeClientV630=lib.createClient(c.SUPABASE_URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
  supabaseRealtimeClientV630.realtime.setAuth(S.token);
  const ch=supabaseRealtimeClientV630.channel('portal-live-'+(S.boot?.user?.reference_id||role||'user'));
- const tables=['portal_supervisor_requests','portal_theses','portal_guidance','portal_documents','portal_academicschedules','portal_catatansidang','portal_deskreview','portal_thesis_exam_scores','portal_research_letters','portal_internshipapplications','portal_student_periods','portal_config','portal_records'];
+ const tables=['portal_supervisorrequests','portal_theses','portal_guidance','portal_documents','portal_academicschedules','portal_catatansidang','portal_deskreview','portal_thesis_exam_scores','portal_research_letters','portal_internshipapplications','portal_student_periods','portal_config','portal_records'];
  for(const table of tables)ch.on('postgres_changes',{event:'*',schema:'public',table},scheduleSupabaseRefreshV632);
  supabaseRealtimeChannelV630=ch.subscribe();
 }
 function scheduleSupabaseRefreshV632(payload){
  const table=String(payload?.table||''),page=S.page;if(document.hidden)return;
  const relevant=!table||
-  (['portal_supervisor_requests','portal_theses','portal_student_periods'].includes(table)&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam'].includes(page))||
+  (['portal_supervisorrequests','portal_theses','portal_student_periods'].includes(table)&&['dashboard','supervisor','guidance','documents','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_guidance'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
   (table==='portal_documents'&&['dashboard','documents','thesis_exam'].includes(page))||
   (table==='portal_academicschedules'&&['dashboard','guidance','proposal_seminar','thesis_exam'].includes(page))||
