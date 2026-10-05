@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261005-2125';
+const INTERNAL_BUILD_V720='20261005-2135';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1815,7 +1815,7 @@ function buildInternshipDraftDocxV615(app,docxApi){
  const emptyFooter=new Footer({children:[new Paragraph({children:[]})]});
  const defaultFooter=new Footer({children:[new Paragraph({alignment:AlignmentType.JUSTIFIED,spacing:{before:0,after:0,...spacingSingle},children:[run('Apabila terdapat tindakan pegawai yang tidak sesuai dengan semangat anti korupsi dan nilai-nilai dasar ASN, Bapak/Ibu dapat menyampaikan laporan melalui saluran pengaduan PKN STAN pada Surel: pengaduan@pknstan.ac.id.',{size:footerSize})]})]});
  const nomorTable=new Table({width:{size:cmToTwip(17),type:WidthType.DXA},columnWidths:[cmToTwip(2.36),cmToTwip(.4),cmToTwip(7.12),cmToTwip(7.12)],layout:TableLayoutType.FIXED,borders:noBorder,rows:[
-   new TableRow({children:[cell('Nomor',2.36),cell(':',.4),cell([run('[@NomorND]')],7.12),cell([run('[@TanggalND]')],7.12,{alignment:AlignmentType.RIGHT})]}),
+   new TableRow({children:[cell('Nomor',2.36),cell(':',.4),cell([new ExternalHyperlink({link:'http://[@nomornd]',children:[run('[@NomorND]')]})],7.12),cell([new ExternalHyperlink({link:'http://[@tanggalnd]',children:[run('[@TanggalND]')]})],7.12,{alignment:AlignmentType.RIGHT})]}),
    new TableRow({children:[cell('Sifat',2.36),cell(':',.4),cell('Segera',7.12),cell('',7.12)]}),
    new TableRow({children:[cell('Lampiran',2.36),cell(':',.4),cell('-',14.24,{columnSpan:2})]}),
    new TableRow({children:[cell('Hal',2.36),cell(':',.4),cell('Permohonan Izin Magang Mahasiswa PKN STAN',14.24,{columnSpan:2})]})
