@@ -830,7 +830,7 @@ window.PORTAL_CONFIG=Object.freeze({
       <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.0</div>
     </div>
   </div>
-  <div class="login-visual"><div><h1>AYO SEMANGAT</h1><h3 style="font-size: 1.2rem; font-style: italic;">Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu♥️</h3></div></div>
+  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2><i></i>Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu</i>♥️</h2></div></div>
 </section>
 
 <!-- v4.7: LOGIN BOOTSTRAP MANDIRI.
@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261008-1900';
+const INTERNAL_BUILD_V720='20261013-1455';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1661,7 +1661,7 @@ function renderInternshipStudent(b){
  let h=`<section class="hero"><h3>Pengajuan Magang</h3><p>Ajukan magang Kemenkeu atau Non-Kemenkeu, pantau proses surat, dan konfirmasi hasil penempatan dari satu halaman.</p></section>`;
  h+=cards([{label:'Total riwayat',value:rows.length},{label:'Kemenkeu tahap ini',value:`${e.kemenkeu?.count||0}/1`},{label:'Non-Kemenkeu tahap ini',value:`${e.nonKemenkeu?.count||0}/3`},{label:'Tahap',value:e.stage_no||e.cycle_no||1}]);
  h+=`<section class="section"><div class="sectionhead"><div><h3>Riwayat Pengajuan Magang</h3><p>Pengajuan berstatus Menunggu dapat diedit atau dibatalkan. Setelah Surat Siap, file TTE dapat dibuka dari tabel.</p></div><button class="btn primary" data-action="intern-open" ${e.hasAccepted?'disabled title="Pengajuan baru dinonaktifkan karena status magang sudah Diterima"':''}>+ Tambah Pengajuan Magang</button></div>${internshipStudentTable(rows,st)}</section>`;
-const confirmationApps=rows.filter(a=>a.type==='non-kemenkeu'&&(a.members||[]).some(m=>String(m.student_id)===String(st.student_id))&&Object.values(a.memberStatuses||{}).some(x=>String(x)==='Surat Siap'));
+const confirmationApps=rows.filter(a=>{if(a.type!=='non-kemenkeu'||!(a.members||[]).some(m=>String(m.student_id)===String(st.student_id)))return false;const isPic=String(a.pic_student_id||'')===String(st.student_id||''),statuses=a.memberStatuses||{},selfStatus=String(statuses[String(st.student_id)]||a.status||'');return isPic?Object.values(statuses).some(x=>String(x)==='Surat Siap'):selfStatus==='Surat Siap'});
  if(e.hasAccepted)h+=`<div class="alert success" style="margin-bottom:14px"><b>Pengajuan magang selesai.</b><br>Status magang Anda sudah Diterima, sehingga pengajuan baru dinonaktifkan.</div>`;
  if(confirmationApps.length){h+=`<section class="card"><div class="sectionhead"><div><h3>Konfirmasi Hasil Non-Kemenkeu</h3><p>Setelah status menjadi Surat Siap, setiap mahasiswa dapat menyimpan konfirmasi Diterima atau Ditolak untuk dirinya. PIC juga dapat membantu mengonfirmasi anggota lain.</p></div></div>${confirmationApps.map(a=>{const isPic=String(a.pic_student_id||'')===String(st.student_id||''),visibleMembers=(a.members||[]).filter(m=>isPic||String(m.student_id)===String(st.student_id));return `<div class="subtlebox" style="margin-bottom:12px"><b>${esc(a.office_name||'Instansi')}</b><div class="hint">Prioritas ${esc(a.student_priority_no||a.priority_no||'-')} · ${internshipStatus(a.status)}</div>${visibleMembers.map(m=>{const ms=(a.memberStatuses||{})[String(m.student_id)]||a.status;return `<div class="sectionhead" style="margin-top:10px"><div><b>${esc(m.name||m.student_id)}</b><p>${esc(m.student_id)} · ${internshipStatus(ms)}</p></div>${String(ms)==='Surat Siap'?`<div class="actions"><button class="btn success small" data-action="intern-finalize" data-id="${attr(a.application_id)}" data-student="${attr(m.student_id)}" data-decision="Diterima">Diterima</button><button class="btn danger small" data-action="intern-finalize" data-id="${attr(a.application_id)}" data-student="${attr(m.student_id)}" data-decision="Ditolak">Ditolak</button></div>`:''}</div>`}).join('')}</div>`}).join('')}</section>`}
  if(form){h+=`<div id="internshipComposer">${renderInternshipForm(form,b)}</div>`}else if(S.cache.internshipComposerOpen){
@@ -1703,10 +1703,19 @@ function internshipDelete(id){
 }
 async function confirmInternshipCancelV630(){const pending=S.cache.pendingInternshipCancelV630;if(!pending?.id)return toast('Data pembatalan tidak ditemukan. Buka kembali pengajuan.',true);busy(true);try{const result=await api('deleteInternshipApplication',pending.id);S.cache.pendingInternshipCancelV630=null;closeModal();S.cache.internshipForm=null;S.cache.internshipComposerOpen=false;applyInternshipBundleV622(result.bundle,result.internship_revision);toast('Pengajuan magang berhasil dihapus. Anda dapat membuat pengajuan baru.')}catch(e){toast(e.message,true)}finally{busy(false)}}
 function internshipApplyFinalLocal(id,studentId,decision){
- const bundle=S.cache.internship||{},accepted=['Diterima','Diterima Pilihan 1','Diterima Pilihan 2','Diterima Pilihan 3'];
- const apply=list=>(list||[]).forEach(a=>{if(String(a.application_id)!==String(id))return;a.memberStatuses=Object.assign({},a.memberStatuses||{});a.memberStatuses[String(studentId)]=decision;const statuses=(a.members||[]).map(m=>String(a.memberStatuses[String(m.student_id)]||a.status));a.status=statuses.length&&statuses.every(x=>x==='Ditolak')?'Ditolak':(statuses.length&&statuses.every(x=>accepted.includes(x))?'Diterima':'Surat Siap')});
+ const bundle=S.cache.internship||{},accepted=['Diterima','Diterima Pilihan 1','Diterima Pilihan 2','Diterima Pilihan 3'],currentStudentId=String(bundle.student?.student_id||'');
+ const apply=list=>(list||[]).forEach(a=>{
+   if(String(a.application_id)!==String(id))return;
+   a.memberStatuses=Object.assign({},a.memberStatuses||{});a.memberStatuses[String(studentId)]=decision;
+   const statuses=(a.members||[]).map(m=>String(a.memberStatuses[String(m.student_id)]||a.group_status||a.status));
+   const groupStatus=statuses.length&&statuses.every(x=>x==='Ditolak')?'Ditolak':(statuses.length&&statuses.every(x=>accepted.includes(x))?'Diterima':'Surat Siap');
+   a.group_status=groupStatus;
+   const ownMemberStatus=Object.entries(a.memberStatuses||{}).find(([key])=>String(key).trim().toLowerCase()===currentStudentId.trim().toLowerCase())?.[1];
+   a.student_status=String(ownMemberStatus||a.student_status||a.status||groupStatus);
+   a.status=a.student_status||groupStatus;
+ });
  apply(bundle.applications);apply(bundle.ownApplications);
- if(String(bundle.student?.student_id||'')===String(studentId)&&accepted.includes(decision)){const e=bundle.eligibility||{};e.hasAccepted=true;['kemenkeu','nonKemenkeu'].forEach(k=>{if(e[k]){e[k].canSubmit=false;e[k].reason='Status magang sudah Diterima. Pengajuan magang baru tidak dapat dibuat.'}})}
+ if(currentStudentId===String(studentId)&&accepted.includes(decision)){const e=bundle.eligibility||{};e.hasAccepted=true;['kemenkeu','nonKemenkeu'].forEach(k=>{if(e[k]){e[k].canSubmit=false;e[k].reason='Status magang sudah Diterima. Pengajuan magang baru tidak dapat dibuat.'}})}
 }
 async function internshipFinalize(el){
  const id=el.dataset.id,studentId=el.dataset.student,decision=el.dataset.decision,snapshot=JSON.stringify(S.cache.internship||{});
