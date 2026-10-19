@@ -1501,13 +1501,17 @@ function lecturerPastExamNoteHistoryV841(rows){
  // Riwayat mencakup catatan yang sudah tersimpan hari ini maupun tanggal sebelumnya.
  // Jadwal hari ini tetap dipertahankan pada tampilan jadwal biasa; hanya jadwal sebelum hari ini
  // yang digantikan oleh kartu riwayat untuk mencegah duplikasi tampilan lama.
- return (rows||[]).filter(x=>{const d=examHistoryDateKeyV841(x);return String(x?.note||'').trim()&&d&&d<=today});
+ return (rows||[]).filter(x=>{
+   // Catatan yang sudah tersimpan harus terlihat, meski baris jadwal hilang,
+   // tanggal ujian kosong, atau timestamp UTC berbeda hari di zona lokal.
+   return Boolean(String(x?.note||'').trim()) && Boolean(String(x?.updated_at||x?.finalized_at||x?.event_date||'').trim());
+ });
 }
 function lecturerExamNoteHistoryHtmlV840(rows){
  const items=lecturerPastExamNoteHistoryV841(rows);
  if(!items.length)return'';
  const cards=items.map(r=>{
-   const recordedAt=String(r.finalized_at||r.updated_at||'').trim();
+   const recordedAt=String(r.updated_at||r.finalized_at||'').trim();
    const studentMeta=[r.student_id,r.program_name,r.class_name?`Kelas ${r.class_name}`:''].filter(Boolean).map(esc).join(' · ');
    return `<article class="card" style="margin-bottom:10px">
     <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p>${r.title?`<p style="margin-top:4px"><b>Judul:</b> ${esc(r.title)}</p>`:''}</div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
