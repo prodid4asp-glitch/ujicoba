@@ -1508,13 +1508,16 @@ function lecturerPastExamNoteHistoryV841(rows){
    return Boolean(String(x?.note??'').trim());
  });
 }
+/* TITIP HISTORY NO SCHEDULE COLUMN — build 20261020-0200.
+   History cards deliberately omit the Jadwal Ujian Skripsi field.
+   Active schedule cards remain unchanged. */
 function lecturerExamNoteHistoryHtmlV840(rows){
  const items=lecturerPastExamNoteHistoryV841(rows);
  if(!items.length)return'';
  const cards=items.map(r=>{
    const recordedAt=String(r.updated_at||r.finalized_at||'').trim();
    const studentMeta=[r.student_id,r.program_name,r.class_name?`Kelas ${r.class_name}`:''].filter(Boolean).map(esc).join(' · ');
-   return `<article class="card" style="margin-bottom:10px">
+   return `<article class="card" data-history-no-schedule-column="true" style="margin-bottom:10px">
     <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p>${r.title?`<p style="margin-top:4px"><b>Judul:</b> ${esc(r.title)}</p>`:''}</div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
     <div class="detail-grid">
       <div class="detail-item"><small>Waktu Pencatatan</small><div>${recordedAt?dt(recordedAt):'Belum ada catatan'}</div></div>
@@ -1530,7 +1533,7 @@ function lecturerExamNoteHistoryHtmlV840(rows){
     <div class="score-note" style="margin-top:10px"><span>Catatan Skripsi Anda</span><p>${esc(r.note||'Belum ada catatan ujian yang disimpan.')}</p></div>
    </article>`;
  }).join('');
- return `<section class="section lecturer-exam-note-history-v841">
+ return `<section class="section lecturer-exam-note-history-v841" data-history-build="20261020-0200-no-schedule-column">
   <div class="sectionhead"><div><h3>Riwayat Catatan Ujian Skripsi</h3><p>Catatan yang sudah Anda tulis, termasuk untuk ujian hari ini dan tanggal-tanggal sebelumnya. Hanya catatan Anda sendiri yang ditampilkan.</p></div></div>
   ${cards}
  </section>`;
