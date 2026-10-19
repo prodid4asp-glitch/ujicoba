@@ -1504,7 +1504,7 @@ function lecturerPastExamNoteHistoryV841(rows){
  return (rows||[]).filter(x=>{
    // Catatan yang sudah tersimpan harus terlihat, meski baris jadwal hilang,
    // tanggal ujian kosong, atau timestamp UTC berbeda hari di zona lokal.
-   return Boolean(String(x?.note||'').trim()) && Boolean(String(x?.updated_at||x?.finalized_at||x?.event_date||'').trim());
+   return Boolean(String(x?.note??'').trim());
  });
 }
 function lecturerExamNoteHistoryHtmlV840(rows){
@@ -1512,11 +1512,14 @@ function lecturerExamNoteHistoryHtmlV840(rows){
  if(!items.length)return'';
  const cards=items.map(r=>{
    const recordedAt=String(r.updated_at||r.finalized_at||'').trim();
+   const plannedDate=String(r.event_date||'').trim().slice(0,10);
+   const examWhen=plannedDate?`${scheduleDateLongV720(plannedDate)}${r.start_time?' · '+esc(String(r.start_time).slice(0,5)):''}`:'-';
    const studentMeta=[r.student_id,r.program_name,r.class_name?`Kelas ${r.class_name}`:''].filter(Boolean).map(esc).join(' · ');
    return `<article class="card" style="margin-bottom:10px">
     <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p>${r.title?`<p style="margin-top:4px"><b>Judul:</b> ${esc(r.title)}</p>`:''}</div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
     <div class="detail-grid">
-      <div class="detail-item"><small>Waktu Pencatatan</small><div>${recordedAt?dt(recordedAt):'-'}</div></div>
+      <div class="detail-item"><small>Waktu Pencatatan</small><div>${recordedAt?dt(recordedAt):'Belum ada catatan'}</div></div>
+      <div class="detail-item"><small>Jadwal Ujian Skripsi</small><div>${examWhen}</div></div>
       <div class="detail-item"><small>NIM</small><div>${esc(r.student_id||'-')}</div></div>
       <div class="detail-item"><small>Program Studi</small><div>${esc(r.program_name||'-')}</div></div>
       <div class="detail-item"><small>Kelas</small><div>${esc(r.class_name||'-')}</div></div>
@@ -1525,7 +1528,7 @@ function lecturerExamNoteHistoryHtmlV840(rows){
       <div class="detail-item"><small>Ketua Penguji</small><div>${esc(r.chair_name||r.chair_id||'-')}</div></div>
       <div class="detail-item span2"><small>Anggota Penguji 2</small><div>${esc(r.examiner_2_name||r.examiner_2_id||'-')}</div></div>
     </div>
-    <div class="score-note" style="margin-top:10px"><span>Catatan Skripsi Anda</span><p>${esc(r.note||'-')}</p></div>
+    <div class="score-note" style="margin-top:10px"><span>Catatan Skripsi Anda</span><p>${esc(r.note||'Belum ada catatan ujian yang disimpan.')}</p></div>
    </article>`;
  }).join('');
  return `<section class="section lecturer-exam-note-history-v841">
@@ -1537,7 +1540,8 @@ function normalizeStudentIdV841(v){return String(v??'').trim().toLowerCase()}
 function renderMentee661(kind,b){
  const role=operationalUiRoleV720(),schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
  const rawRecords=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[],indexedRecords=schedule?rawRecords.map((r,i)=>Object.assign({_sourceIndex:i},r)):rawRecords;
- const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'?lecturerPastExamNoteHistoryV841(b.examNoteHistory||[]):[];
+  // Riwayat mencakup jadwal sidang hari ini meski dosen belum mengisi catatan.
+  const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'?lecturerPastExamNoteHistoryV841(b.examNoteHistory||[]):[];
  const historyScheduleIds=new Set(examNoteHistory.map(x=>String(x.schedule_id||'')).filter(Boolean)),todayKeyV841=localDateKeyV841();
  const records=kind==='THESIS_EXAM'&&role==='lecturer'?indexedRecords.filter(r=>{const d=examHistoryDateKeyV841(r);return !(d&&d<todayKeyV841&&historyScheduleIds.has(String(r.schedule_id||'')))}):indexedRecords;
  const currentStudentIdsV841=new Set(records.map(r=>normalizeStudentIdV841(r?.student_id)).filter(Boolean));
@@ -1561,7 +1565,7 @@ function renderMentee661(kind,b){
  const filterBar=`<div class="filterbar mentee-filterbar"><div class="field"><label for="menteeSearch661">Cari mahasiswa atau data</label><input id="menteeSearch661" type="search" value="${attr(saved.q||'')}" placeholder="Nama, NIM, judul, catatan, dosen..."></div><div class="field"><label>Tahun Akademik</label><select id="menteeYear661"><option value="">Semua Tahun</option>${years.map(v=>`<option value="${attr(v)}" ${String(saved.year||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select id="menteeSemester661"><option value="">Semua Semester</option>${semesters.map(v=>`<option value="${attr(v)}" ${String(saved.semester||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div><div class="field"><label>Program Studi</label><select id="menteeProgram661"><option value="">Semua Prodi</option>${programs.map(v=>`<option value="${attr(v)}" ${String(saved.program||'')===String(v)?'selected':''}>${esc(v)}</option>`).join('')}</select></div>${kind==='documents'&&isAdminLikeV720(role)?`<div class="field"><label>Jenis Dokumen</label><select id="menteeDocumentType672"><option value="">Semua Jenis Dokumen</option>${DOCUMENT_TYPE_OPTIONS_V667.map(([v,l])=>`<option value="${attr(v)}" ${String(saved.documentType||'')===String(v)?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`:''}<div class="field"><label>Status Data</label><select id="menteeData661"><option value="">Semua</option><option value="with" ${saved.data==='with'?'selected':''}>Ada Data</option><option value="without" ${saved.data==='without'?'selected':''}>Belum Ada Data</option></select></div><span id="menteeCount661" class="mentee-filter-count"></span></div>`+`<div id="menteePager780" class="toolbar" style="justify-content:flex-end;margin:8px 0 12px"></div>`;
  let html=topAction+docSummary+(groups.length?filterBar:'')+groups.map(g=>`<section data-mentee-group data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}"><h3 class="mentee-period-title">${esc(g.label)}</h3>${g.students.map(s=>`<article class="card${schedule?' schedule-mentee-card':''}" data-mentee-card data-year="${attr(g.academicYear)}" data-semester="${attr(g.semester)}" data-program="${attr(s.program_name||'')}" data-has-data="${s.data.length?'with':'without'}" data-search="${attr(menteeSearchCorpusV640(s,s.data))}"><header class="mentee-identity"><span class="mentee-seq" data-mentee-number></span><h4>${esc(s.student_name)}</h4><span class="hint">${esc(s.student_id)}${s.class_name?` · ${esc(s.class_name)}`:''}${role==='lecturer'&&!s.is_mentee?' · Sebagai pembahas/penguji':''}</span></header>${kind==='guidance'&&isAdminLikeV720(role)?guidanceAdminProgressV668(s.data):''}${schedule?`<div class="schedule-mentee-body">${content(s.data)}</div>`:content(s.data)}</article>`).join('')}</section>`).join('')+(groups.length?'':(examNoteHistory.length?'<div class="card"><p class="hint">Tidak ada jadwal Ujian Skripsi pada hari ini atau tanggal mendatang.</p></div>':'<div class="card">Belum ada mahasiswa bimbingan atau penugasan.</div>'));
  if(kind==='documents'&&isAdminLikeV720(role)&&b.theses?.length)html+=documentUploadFormHtmlV662(b,role);
- if(kind==='THESIS_EXAM'&&role==='lecturer'&&examNoteHistory.length)html+=lecturerExamNoteHistoryHtmlV840(examNoteHistory);
+ if(kind==='THESIS_EXAM'&&role==='lecturer')html+=examNoteHistory.length?lecturerExamNoteHistoryHtmlV840(examNoteHistory):'<section class="section"><h3>Riwayat Catatan Ujian Skripsi</h3><p class="hint">Belum ditemukan catatan dengan kolom note terisi pada portal_thesis_exam_scores untuk akun dosen ini.</p></section>';
  $('content').innerHTML=html;
  const pageState=S.cache.menteePage780||(S.cache.menteePage780={});if(!Number.isFinite(Number(pageState[kind])))pageState[kind]=0;
  const filter=(resetPage=false)=>{const query=String($('menteeSearch661')?.value||'').trim(),year=val('menteeYear661'),semester=val('menteeSemester661'),program=val('menteeProgram661'),data=val('menteeData661'),documentType=kind==='documents'&&isAdminLikeV720(role)?val('menteeDocumentType672'):'';S.cache.menteeFilters661={...(S.cache.menteeFilters661||{}),[kind]:{q:query,year,semester,program,data,documentType}};if(resetPage)pageState[kind]=0;const cards=[...document.querySelectorAll('[data-mentee-card]')],matched=[];cards.forEach(el=>{let matchingDocumentRows=0;if(kind==='documents'&&isAdminLikeV720(role)){el.querySelectorAll('[data-document-row]').forEach(row=>{const match=!documentType||row.dataset.documentType===documentType;row.hidden=!match;row.classList.toggle('filter-hidden',!match);if(match)matchingDocumentRows++;});}const base=searchMatchesV663(el.dataset.search||'',query)&&(!year||el.dataset.year===year)&&(!semester||el.dataset.semester===semester)&&(!program||el.dataset.program===program)&&(!data||el.dataset.hasData===data),ok=base&&(!(kind==='documents'&&isAdminLikeV720(role)&&documentType)||matchingDocumentRows>0);el.dataset.filterMatch780=ok?'1':'0';if(ok)matched.push(el);});const totalPages=Math.max(1,Math.ceil(matched.length/LIST_PAGE_SIZE_V780));pageState[kind]=Math.max(0,Math.min(Number(pageState[kind])||0,totalPages-1));const start=pageState[kind]*LIST_PAGE_SIZE_V780,visible=new Set(matched.slice(start,start+LIST_PAGE_SIZE_V780));let seq=start;cards.forEach(el=>{const show=visible.has(el);el.hidden=!show;el.classList.toggle('filter-hidden',!show);if(show){seq++;const no=el.querySelector('[data-mentee-number]');if(no)no.textContent=seq+'.';}});document.querySelectorAll('[data-mentee-group]').forEach(el=>{const any=[...el.querySelectorAll('[data-mentee-card]')].some(c=>!c.hidden);el.hidden=!any;el.classList.toggle('filter-hidden',!any)});if($('menteeCount661'))$('menteeCount661').textContent=`${matched.length} data · halaman ${matched.length?pageState[kind]+1:0}/${matched.length?totalPages:0}`;const pager=$('menteePager780');if(pager){pager.innerHTML=matched.length>LIST_PAGE_SIZE_V780?`<button type="button" class="btn ghost small" data-mentee-page780="prev" ${pageState[kind]===0?'disabled':''}>Sebelumnya</button><span class="filter-count">${start+1}–${Math.min(start+LIST_PAGE_SIZE_V780,matched.length)} dari ${matched.length}</span><button type="button" class="btn ghost small" data-mentee-page780="next" ${pageState[kind]>=totalPages-1?'disabled':''}>Berikutnya</button>`:'';pager.querySelectorAll('[data-mentee-page780]').forEach(btn=>btn.onclick=()=>{pageState[kind]+=btn.dataset.menteePage780==='next'?1:-1;filter(false);});}};
