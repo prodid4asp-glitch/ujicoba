@@ -1513,14 +1513,12 @@ function lecturerExamNoteHistoryHtmlV840(rows){
  if(!items.length)return'';
  const cards=items.map(r=>{
    const recordedAt=String(r.updated_at||r.finalized_at||'').trim();
-   const plannedDate=String(r.event_date||'').trim().slice(0,10);
-   const examWhen=plannedDate?`${scheduleDateLongV720(plannedDate)}${r.start_time?' · '+esc(String(r.start_time).slice(0,5)):''}`:'-';
    const studentMeta=[r.student_id,r.program_name,r.class_name?`Kelas ${r.class_name}`:''].filter(Boolean).map(esc).join(' · ');
    return `<article class="card" style="margin-bottom:10px">
     <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p>${r.title?`<p style="margin-top:4px"><b>Judul:</b> ${esc(r.title)}</p>`:''}</div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
     <div class="detail-grid">
       <div class="detail-item"><small>Waktu Pencatatan</small><div>${recordedAt?dt(recordedAt):'Belum ada catatan'}</div></div>
-      <div class="detail-item"><small>Jadwal Ujian Skripsi</small><div>${examWhen}</div></div>
+
       <div class="detail-item"><small>NIM</small><div>${esc(r.student_id||'-')}</div></div>
       <div class="detail-item"><small>Program Studi</small><div>${esc(r.program_name||'-')}</div></div>
       <div class="detail-item"><small>Kelas</small><div>${esc(r.class_name||'-')}</div></div>
@@ -1542,9 +1540,12 @@ function renderMentee661(kind,b){
  const role=operationalUiRoleV720(),schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
  const rawRecords=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[],indexedRecords=schedule?rawRecords.map((r,i)=>Object.assign({_sourceIndex:i},r)):rawRecords;
   // Riwayat mencakup jadwal sidang hari ini meski dosen belum mengisi catatan.
-  const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'?lecturerPastExamNoteHistoryV841(b.examNoteHistory||[]):[];
- const historyScheduleIds=new Set(examNoteHistory.map(x=>String(x.schedule_id||'')).filter(Boolean)),todayKeyV841=localDateKeyV841();
- const records=kind==='THESIS_EXAM'&&role==='lecturer'?indexedRecords.filter(r=>{const d=examHistoryDateKeyV841(r);return !(d&&d<todayKeyV841&&historyScheduleIds.has(String(r.schedule_id||'')))}):indexedRecords;
+  // A saved note whose schedule is still present belongs to the regular exam schedule card.
+  // Only orphaned notes use the independent history card; no duplicate notes across sections.
+  const validScheduleIdsV844=new Set(indexedRecords.map(r=>String(r.schedule_id||'').trim()).filter(Boolean));
+  const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'
+    ?lecturerPastExamNoteHistoryV841(b.examNoteHistory||[]).filter(x=>!validScheduleIdsV844.has(String(x.schedule_id||'').trim())):[];
+  const records=indexedRecords;
  const currentStudentIdsV841=new Set(records.map(r=>normalizeStudentIdV841(r?.student_id)).filter(Boolean));
  const rosterForViewV841=kind==='THESIS_EXAM'&&role==='lecturer'?(b.menteeRoster||[]).filter(s=>currentStudentIdsV841.has(normalizeStudentIdV841(s?.student_id))):(b.menteeRoster||[]);
  S.cache.menteeView661={kind,b};S.cache.guidance=b.guidance||[];S.cache.theses=b.theses||[];
