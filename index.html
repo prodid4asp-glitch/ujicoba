@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261019-2205';
+const INTERNAL_BUILD_V720='20261019-2220';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1498,7 +1498,10 @@ function examHistoryDateKeyV841(row){
 }
 function lecturerPastExamNoteHistoryV841(rows){
  const today=localDateKeyV841();
- return (rows||[]).filter(x=>String(x?.note||'').trim()&&examHistoryDateKeyV841(x)&&examHistoryDateKeyV841(x)<today);
+ // Riwayat mencakup catatan yang sudah tersimpan hari ini maupun tanggal sebelumnya.
+ // Jadwal hari ini tetap dipertahankan pada tampilan jadwal biasa; hanya jadwal sebelum hari ini
+ // yang digantikan oleh kartu riwayat untuk mencegah duplikasi tampilan lama.
+ return (rows||[]).filter(x=>{const d=examHistoryDateKeyV841(x);return String(x?.note||'').trim()&&d&&d<=today});
 }
 function lecturerExamNoteHistoryHtmlV840(rows){
  const items=lecturerPastExamNoteHistoryV841(rows);
@@ -1522,7 +1525,7 @@ function lecturerExamNoteHistoryHtmlV840(rows){
    </article>`;
  }).join('');
  return `<section class="section lecturer-exam-note-history-v841">
-  <div class="sectionhead"><div><h3>Riwayat Catatan Ujian Skripsi</h3><p>Catatan dari ujian pada tanggal-tanggal sebelumnya. Hanya catatan yang Anda tulis sendiri yang ditampilkan.</p></div></div>
+  <div class="sectionhead"><div><h3>Riwayat Catatan Ujian Skripsi</h3><p>Catatan yang sudah Anda tulis, termasuk untuk ujian hari ini dan tanggal-tanggal sebelumnya. Hanya catatan Anda sendiri yang ditampilkan.</p></div></div>
   ${cards}
  </section>`;
 }
@@ -2363,7 +2366,7 @@ function legacyExamNotesHtmlV750(notes,hasSchedule=false){
  const list=Array.isArray(notes)?notes.filter(Boolean):[];if(!list.length)return'';
  const intro=hasSchedule
   ?'<div class="notice show"><b>Catatan Sidang Skripsi</b><br>Catatan penguji berikut berasal dari portal_thesis_exam_scores dan ditampilkan sebagai informasi tambahan.</div>'
-  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan penguji</div>';
+  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan penguji.</div>';
  const examinerField=(label,name,value)=>`<div class="detail-item span2"><small>${esc(label)}</small><div class="hint" style="margin:2px 0 6px">Nama Penguji: <b>${esc(String(name||'-'))}</b></div><div style="white-space:pre-wrap">${esc(String(value||'-'))}</div></div>`;
  const field=(label,value)=>`<div class="detail-item span2"><small>${esc(label)}</small><div style="white-space:pre-wrap">${esc(String(value||'-'))}</div></div>`;
  return `<div class="legacy-exam-notes-v750">${intro}${list.map((item,i)=>{const rawDate=String(item?.date_exam||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>Tanggal Sidang: ${esc(date)}</p>`:''}</div>${item?.conclusion?`<span class="badge COMPLETED">${esc(item.conclusion)}</span>`:''}</div><div class="detail-grid">${examinerField('Catatan Ketua Penguji',item?.chair_name,item?.chair)}${examinerField('Catatan Penguji 1',item?.examiner_1_name,item?.examiner_1)}${examinerField('Catatan Penguji 2',item?.examiner_2_name,item?.examiner_2)}${field('Kesimpulan Tim Penguji',item?.conclusion)}${field('Tanggal Sidang',date||rawDate||'-')}</div></div>`}).join('')}</div>`;
