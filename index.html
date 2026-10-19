@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261019-1930';
+const INTERNAL_BUILD_V720='20261019-1940';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1504,13 +1504,12 @@ function lecturerExamNoteHistoryHtmlV840(rows){
  const items=lecturerPastExamNoteHistoryV841(rows);
  if(!items.length)return'';
  const cards=items.map(r=>{
-   const examDate=String(r.event_date||'').trim()?scheduleDateLongV720(r.event_date):'-';
-   const recorded=!String(r.event_date||'').trim()&&String(r.finalized_at||r.updated_at||'').trim()?`<div class="hint" style="margin-top:4px">Waktu pencatatan: ${dt(r.finalized_at||r.updated_at)}</div>`:'';
+   const recordedAt=String(r.finalized_at||r.updated_at||'').trim();
    const studentMeta=[r.student_id,r.program_name,r.class_name?`Kelas ${r.class_name}`:''].filter(Boolean).map(esc).join(' · ');
    return `<article class="card" style="margin-bottom:10px">
     <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p>${r.title?`<p style="margin-top:4px"><b>Judul:</b> ${esc(r.title)}</p>`:''}</div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
     <div class="detail-grid">
-      <div class="detail-item"><small>Tanggal Ujian</small><div>${examDate}</div>${recorded}</div>
+      <div class="detail-item"><small>Waktu Pencatatan</small><div>${recordedAt?dt(recordedAt):'-'}</div></div>
       <div class="detail-item"><small>NIM</small><div>${esc(r.student_id||'-')}</div></div>
       <div class="detail-item"><small>Program Studi</small><div>${esc(r.program_name||'-')}</div></div>
       <div class="detail-item"><small>Kelas</small><div>${esc(r.class_name||'-')}</div></div>
