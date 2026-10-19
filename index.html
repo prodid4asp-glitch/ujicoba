@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261019-2220';
+const INTERNAL_BUILD_V720='20261019-2230';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -2373,7 +2373,11 @@ function legacyExamNotesHtmlV750(notes,hasSchedule=false){
 }
 
 function renderAcademicSchedule(b,eventType){
- if(['lecturer','admin'].includes(operationalUiRoleV720())&&b.menteeRoster)return renderMentee661(eventType,b);
+ const uiRoleV842=operationalUiRoleV720(),hasStandaloneExamHistoryV842=uiRoleV842==='lecturer'&&eventType==='THESIS_EXAM'&&Array.isArray(b.examNoteHistory)&&b.examNoteHistory.some(x=>String(x?.note||'').trim());
+ // Build 20261019-2230: riwayat catatan dosen tidak boleh bergantung pada keberadaan
+ // portal_academicschedules. Jika examNoteHistory berasal dari portal_thesis_exam_scores,
+ // tetap gunakan renderer dosen walaupun menteeRoster/jadwal kosong.
+ if(['lecturer','admin'].includes(uiRoleV842)&&(b.menteeRoster||hasStandaloneExamHistoryV842))return renderMentee661(eventType,b);
  const isProposal=eventType==='PROPOSAL_SEMINAR',allRows=b.rows||[],studentOnly=S.boot.user.role_id==='student';S.cache.scheduleBundle=b;S.cache.scheduleType=eventType;S.cache.schedulePeriodV632=S.cache.schedulePeriodV632||{};
  const options=b.periodOptions||{},saved=S.cache.schedulePeriodV632[eventType]||{},defaults=b.selectedPeriod||{};
  const selectedYear=saved.academicYear!==undefined?saved.academicYear:(defaults.academicYear||''),selectedSemester=saved.semester!==undefined?saved.semester:(defaults.semester||'');
