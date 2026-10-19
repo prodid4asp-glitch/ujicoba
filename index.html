@@ -830,7 +830,7 @@ window.PORTAL_CONFIG=Object.freeze({
       <div id="loginVersion" class="hint" style="margin-top:16px">Versi 6.72.0</div>
     </div>
   </div>
-  <div class="login-visual"><div><small>AYO SEMANGAT</small><h2><i></i>Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu</i>♥️</h2></div></div>
+  <div class="login-visual"><div><h1>AYO SEMANGAT</h1><h3 style="font-size: 1.2rem; font-style: italic;">Skripsimu mungkin tak sempurna, tapi berbanggalah kamu telah meninggalkan warisan bagi masa depan manusia. Terimakasih untuk kerja kerasmu♥️</h3></div></div>
 </section>
 
 <!-- v4.7: LOGIN BOOTSTRAP MANDIRI.
@@ -2363,7 +2363,7 @@ function legacyExamNotesHtmlV750(notes,hasSchedule=false){
  const list=Array.isArray(notes)?notes.filter(Boolean):[];if(!list.length)return'';
  const intro=hasSchedule
   ?'<div class="notice show"><b>Catatan Sidang Skripsi</b><br>Catatan penguji berikut berasal dari portal_thesis_exam_scores dan ditampilkan sebagai informasi tambahan.</div>'
-  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan penguji dari portal_thesis_exam_scores.</div>';
+  :'<div class="notice show success"><b>Sidang skripsi telah terlaksana.</b><br>Data jadwal ujian tidak tersedia pada jadwal portal saat ini. Berikut catatan penguji</div>';
  const examinerField=(label,name,value)=>`<div class="detail-item span2"><small>${esc(label)}</small><div class="hint" style="margin:2px 0 6px">Nama Penguji: <b>${esc(String(name||'-'))}</b></div><div style="white-space:pre-wrap">${esc(String(value||'-'))}</div></div>`;
  const field=(label,value)=>`<div class="detail-item span2"><small>${esc(label)}</small><div style="white-space:pre-wrap">${esc(String(value||'-'))}</div></div>`;
  return `<div class="legacy-exam-notes-v750">${intro}${list.map((item,i)=>{const rawDate=String(item?.date_exam||'').trim(),date=/^\d{4}-\d{2}-\d{2}/.test(rawDate)?scheduleDateLongV720(rawDate.slice(0,10)):rawDate;return `<div class="card" style="margin-top:10px"><div class="sectionhead"><div><h3>Catatan Sidang Skripsi${list.length>1?' '+(i+1):''}</h3>${date?`<p>Tanggal Sidang: ${esc(date)}</p>`:''}</div>${item?.conclusion?`<span class="badge COMPLETED">${esc(item.conclusion)}</span>`:''}</div><div class="detail-grid">${examinerField('Catatan Ketua Penguji',item?.chair_name,item?.chair)}${examinerField('Catatan Penguji 1',item?.examiner_1_name,item?.examiner_1)}${examinerField('Catatan Penguji 2',item?.examiner_2_name,item?.examiner_2)}${field('Kesimpulan Tim Penguji',item?.conclusion)}${field('Tanggal Sidang',date||rawDate||'-')}</div></div>`}).join('')}</div>`;
