@@ -1366,6 +1366,7 @@ async function loadPage(page,force=false){
     if(S.workspace?.pageSynced)S.workspace.pageSynced.documents=0;
     S.cache.documentBundleV620=null;
   }
+  if(page==='thesis_exam'&&S.boot?.user?.role_id==='lecturer'){force=true;if(S.workspace?.pages)delete S.workspace.pages[page];if(S.workspace?.pageSynced)delete S.workspace.pageSynced[page];}
   let cached=hydrateBundleV52(page,S.workspace.pages?.[page]);
   // Build lama menyimpan legacyExamSchedule dari tabel eksternal. Jangan tampilkan
   // cache tersebut sebagai jadwal baru; ambil ulang dari tabel operasional.
