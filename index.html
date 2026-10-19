@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261013-1455';
+const INTERNAL_BUILD_V720='20261019-1450';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1483,11 +1483,41 @@ function examAssessmentActionsV795(row,b){
  return `${eligibilityButton}<button class="btn primary small" data-action="exam-score" data-id="${attr(id)}">${own?.score_id?'Ubah Nilai Skripsi':'Isi Nilai Skripsi'}</button><button class="btn secondary small" data-action="exam-comprehensive" data-id="${attr(id)}">${comp?'Ubah Nilai Komprehensif':'Isi Nilai Komprehensif'}</button>`;
 }
 
+function examRoleLabelV840(role){
+ const key=String(role||'').toUpperCase();
+ return key==='CHAIR'?'Ketua Penguji':key==='EXAMINER_1'?'Anggota Penguji 1':key==='EXAMINER_2'?'Anggota Penguji 2':'Penguji';
+}
+function lecturerExamNoteHistoryHtmlV840(rows){
+ const items=(rows||[]).filter(x=>String(x?.note||'').trim());
+ if(!items.length)return'';
+ const cards=items.map(r=>{
+   const examDate=String(r.event_date||'').trim()?scheduleDateLongV720(r.event_date):'-';
+   const recorded=!String(r.event_date||'').trim()&&String(r.finalized_at||r.updated_at||'').trim()?`<div class="hint" style="margin-top:4px">Waktu pencatatan: ${dt(r.finalized_at||r.updated_at)}</div>`:'';
+   const studentMeta=[r.student_id,r.program_name,r.class_name].filter(Boolean).map(esc).join(' · ');
+   return `<article class="card" style="margin-bottom:10px">
+    <div class="sectionhead" style="align-items:flex-start;margin-bottom:9px"><div><h3>${esc(r.student_name||r.student_id||'-')}</h3><p>${studentMeta||'-'}</p></div><span class="badge">${esc(examRoleLabelV840(r.examiner_role))}</span></div>
+    <div class="detail-grid">
+      <div class="detail-item"><small>Tanggal Ujian</small><div>${examDate}</div>${recorded}</div>
+      <div class="detail-item"><small>Mahasiswa</small><div>${esc(r.student_name||'-')} · ${esc(r.student_id||'-')}</div></div>
+      <div class="detail-item"><small>Anggota Penguji 1</small><div>${esc(r.examiner_1_name||r.examiner_1_id||'-')}</div></div>
+      <div class="detail-item"><small>Ketua Penguji</small><div>${esc(r.chair_name||r.chair_id||'-')}</div></div>
+      <div class="detail-item span2"><small>Anggota Penguji 2</small><div>${esc(r.examiner_2_name||r.examiner_2_id||'-')}</div></div>
+    </div>
+    <div class="score-note" style="margin-top:10px"><span>Catatan Skripsi Anda</span><p>${esc(r.note||'-')}</p></div>
+   </article>`;
+ }).join('');
+ return `<section class="section">
+  <div class="sectionhead"><div><h3>Riwayat Catatan Ujian Skripsi</h3><p>Anda tidak memiliki jadwal Ujian Skripsi aktif. Riwayat berikut hanya menampilkan catatan Skripsi yang pernah Anda tulis sebagai penguji.</p></div></div>
+  ${cards}
+ </section>`;
+}
 function renderMentee661(kind,b){
  const role=operationalUiRoleV720(),schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
  const rawRecords=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[],records=schedule?rawRecords.map((r,i)=>Object.assign({_sourceIndex:i},r)):rawRecords;
  S.cache.menteeView661={kind,b};S.cache.guidance=b.guidance||[];S.cache.theses=b.theses||[];
  S.cache.documentBundleV620=b;S.cache.scheduleBundle=b;if(schedule)S.cache.scheduleType=kind;
+ const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'&&!records.length?(b.examNoteHistory||[]):[];
+ if(examNoteHistory.length){$('content').innerHTML=lecturerExamNoteHistoryHtmlV840(examNoteHistory);restoreDetailStatesV632($('content'));return;}
  const saved=(S.cache.menteeFilters661||{})[kind]||{},groups=menteeGroups661(b.menteeRoster||[],records,kind);
  if(schedule)groups.forEach(g=>{g.students=scheduleMenteeSortV6642(g.students)});
  const years=[...new Set(groups.map(g=>g.academicYear).filter(Boolean))].sort().reverse(),semesters=[...new Set(groups.map(g=>g.semester).filter(Boolean))],programs=[...new Set((b.menteeRoster||[]).map(s=>String(s.program_name||'').trim()).filter(Boolean))].sort((a,z)=>a.localeCompare(z,'id'));
@@ -2574,7 +2604,8 @@ function examGradeGuideV728(){
 }
 // Form komprehensif dinamis v6.72.0; rekaman lama 3+3+1 tetap dapat dibaca.
 function comprehensiveAssessmentForV728(bundle,scheduleId){return (bundle?.comprehensiveAssessments||[]).find(x=>String(x.schedule_id)===String(scheduleId)&&String(x.lecturer_id)===String(bundle.currentReviewerId))||null}
-function comprehensiveCourseOptionsV728(items,selected){return '<option value="">Pilih mata kuliah</option>'+(items||[]).map(x=>`<option value="${attr(x.course_id)}" ${String(selected)===String(x.course_id)?'selected':''}>${esc(x.course_name)}</option>`).join('')}
+function comprehensiveCourseOptionsV728(items,selected){const list=items||[];if(!list.length)return '<option value="">Belum ada mata kuliah aktif untuk prodi ini</option>';return '<option value="">Pilih mata kuliah</option>'+list.map(x=>`<option value="${attr(x.course_id)}" ${String(selected)===String(x.course_id)?'selected':''}>${esc(x.course_name)}</option>`).join('')}
+function normalizeComprehensiveProgramV835(value){const raw=String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();if(!raw)return'';const n=raw.replace(/[._/()\-]+/g,' ').replace(/\s+/g,' ').trim();if(/(^|\s)asp($|\s)/.test(n)||n.includes('akuntansi sektor publik'))return'asp';if(/(^|\s)mkn($|\s)/.test(n)||n.includes('manajemen keuangan negara'))return'mkn';if(/(^|\s)map($|\s)/.test(n)||n.includes('manajemen aset publik'))return'map';return n}
 let COMP_FORM_V730=null;
 const compIdV730=()=>('q'+Math.random().toString(36).slice(2)+Date.now().toString(36));
 function compLegacyGroupsV730(old){
@@ -2657,8 +2688,8 @@ function openExamComprehensiveV728(scheduleId){
   active=(b.comprehensiveCoursesBySchedule||{})[String(scheduleId)]||[],
   snapshots=(old.course_snapshot||[]).map(x=>({course_id:String(x.course_id||''),course_name:String(x.course_name||''),program_name:String(x.program_name||'')})),
   courses=[...new Map([...snapshots,...active].map(x=>[String(x.course_id),x])).values()];
- const normalizeProg=x=>String(x||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase(),previousIds=new Set(compLegacyGroupsV730(old).filter(g=>g.type==='course').map(g=>g.course_id));
- const previouslySelected=snapshots.filter(x=>previousIds.has(x.course_id)&&normalizeProg(x.program_name)===normalizeProg(row.program_name)).map(x=>x.course_id);
+ const previousIds=new Set(compLegacyGroupsV730(old).filter(g=>g.type==='course').map(g=>g.course_id));
+ const previouslySelected=snapshots.filter(x=>previousIds.has(x.course_id)&&normalizeComprehensiveProgramV835(x.program_name)===normalizeComprehensiveProgramV835(row.program_name)).map(x=>x.course_id);
  COMP_FORM_V730={scheduleId,old,groups:compLegacyGroupsV730(old),locked,courses,activeCourseIds:new Set([...active.map(x=>String(x.course_id)),...previouslySelected])};
  const labels={CHAIR:'Ketua Penguji',EXAMINER_1:'Anggota Penguji 1 / Dosen Pembimbing',EXAMINER_2:'Anggota Penguji 2'};
  const body=`${scheduleReviewContext(row)}
