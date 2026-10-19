@@ -1060,7 +1060,7 @@ window.PORTAL_CONFIG=Object.freeze({
 'use strict';
 const $=id=>document.getElementById(id);
 const SESSION_TTL_MS=24*60*60*1000;
-const INTERNAL_BUILD_V720='20261019-1920';
+const INTERNAL_BUILD_V720='20261019-1930';
 const FREE_TIER_ECONOMY_V760=true;
 const ECONOMY_PAGE_FRESH_MS_V760=15*60*1000;
 const ECONOMY_MAX_PAGE_CACHE_V760=3;
@@ -1527,14 +1527,15 @@ function lecturerExamNoteHistoryHtmlV840(rows){
   ${cards}
  </section>`;
 }
+function normalizeStudentIdV841(v){return String(v??'').trim().toLowerCase()}
 function renderMentee661(kind,b){
  const role=operationalUiRoleV720(),schedule=['PROPOSAL_SEMINAR','THESIS_EXAM'].includes(kind),proposal=kind==='PROPOSAL_SEMINAR';
  const rawRecords=b[schedule?'rows':kind==='guidance'?'guidance':'documents']||[],indexedRecords=schedule?rawRecords.map((r,i)=>Object.assign({_sourceIndex:i},r)):rawRecords;
  const examNoteHistory=kind==='THESIS_EXAM'&&role==='lecturer'?lecturerPastExamNoteHistoryV841(b.examNoteHistory||[]):[];
  const historyScheduleIds=new Set(examNoteHistory.map(x=>String(x.schedule_id||'')).filter(Boolean)),todayKeyV841=localDateKeyV841();
  const records=kind==='THESIS_EXAM'&&role==='lecturer'?indexedRecords.filter(r=>{const d=examHistoryDateKeyV841(r);return !(d&&d<todayKeyV841&&historyScheduleIds.has(String(r.schedule_id||'')))}):indexedRecords;
- const currentStudentIdsV841=new Set(records.map(r=>normStudentId(r?.student_id)).filter(Boolean));
- const rosterForViewV841=kind==='THESIS_EXAM'&&role==='lecturer'?(b.menteeRoster||[]).filter(s=>currentStudentIdsV841.has(normStudentId(s?.student_id))):(b.menteeRoster||[]);
+ const currentStudentIdsV841=new Set(records.map(r=>normalizeStudentIdV841(r?.student_id)).filter(Boolean));
+ const rosterForViewV841=kind==='THESIS_EXAM'&&role==='lecturer'?(b.menteeRoster||[]).filter(s=>currentStudentIdsV841.has(normalizeStudentIdV841(s?.student_id))):(b.menteeRoster||[]);
  S.cache.menteeView661={kind,b};S.cache.guidance=b.guidance||[];S.cache.theses=b.theses||[];
  S.cache.documentBundleV620=b;S.cache.scheduleBundle=b;if(schedule)S.cache.scheduleType=kind;
  const saved=(S.cache.menteeFilters661||{})[kind]||{},groups=menteeGroups661(rosterForViewV841,records,kind);
